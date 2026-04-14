@@ -1,0 +1,22 @@
+{
+  "name": "faostat-skills",
+  "description": "Analysis skills for UN FAOSTAT food and agriculture data. Country profiles, commodity briefings, trade analysis, climate assessments, and data visualizations. Works with any AI assistant that supports the SKILL.md format.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Griffiths Obli-Laryea"
+  },
+  "homepage": "https://github.com/berba-q/faostat-skills",
+  "repository": "https://github.com/berba-q/faostat-skills",
+  "license": "MIT",
+  "keywords": [
+    "faostat",
+    "agriculture",
+    "food-security",
+    "trade",
+    "emissions",
+    "climate",
+    "commodities",
+    "analysis",
+    "visualization"
+  ]
+}
