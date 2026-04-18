@@ -22,10 +22,12 @@ claude plugin install faostat-skills@faostat
 
 **OpenAI Codex**
 ```bash
-git clone https://github.com/berba-q/faostat-skills.git ~/.agents/skills/faostat-skills
+# Clone, then copy each skill folder directly into your skills directory
+git clone https://github.com/berba-q/faostat-skills.git /tmp/faostat-skills
+cp -r /tmp/faostat-skills/skills/* ~/.codex/skills/
 ```
 
-**Other AI assistants** — copy the `skills/` directory to wherever your tool discovers skill files. Consult your provider's documentation for the correct skills directory path.
+**Other AI assistants** — copy the contents of the `skills/` directory to wherever your tool discovers skill files. Consult your provider's documentation for the correct skills directory path.
 
 Once installed, try asking:
 ```
@@ -66,17 +68,23 @@ claude plugin update faostat-skills@faostat
 
 ### OpenAI Codex
 
-Clone this repo into your Codex skills directory:
+Each skill folder must sit directly inside your Codex skills directory — not nested inside a parent folder. Clone and copy:
 
 ```bash
-git clone https://github.com/berba-q/faostat-skills.git ~/.agents/skills/faostat-skills
+git clone https://github.com/berba-q/faostat-skills.git /tmp/faostat-skills
+cp -r /tmp/faostat-skills/skills/* ~/.codex/skills/
 ```
 
-Or symlink the skills directory:
+Or keep the repo for easy updates via `git pull`:
 
 ```bash
-ln -s /path/to/faostat-skills/skills ~/.agents/skills/faostat
+git clone https://github.com/berba-q/faostat-skills.git ~/faostat-skills
+for dir in ~/faostat-skills/skills/*/; do
+  ln -s "$dir" ~/.codex/skills/"$(basename "$dir")"
+done
 ```
+
+> Consult the [Codex documentation](https://platform.openai.com/docs/codex) for the exact skills directory path on your system.
 
 ### Other AI Assistants
 

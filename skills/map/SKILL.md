@@ -1,6 +1,6 @@
 ---
 name: faostat-map
-description: Use when the user wants a world or regional choropleth map of a FAOSTAT metric — production, yield, trade flow, emissions, temperature change, fertilizer use, undernourishment, or any other country-level indicator. Use when the user asks for "a map of X", "where is Y grown/produced/emitted", "show global distribution of Z", or for a choropleth / heat-map style visualization of FAOSTAT data. Keywords: map, choropleth, world map, global distribution, country map, geographic, geospatial, heatmap, where, by country
+description: Use when the user wants a world or regional choropleth map of a FAOSTAT metric — production, yield, trade flow, emissions, temperature change, fertilizer use, undernourishment, or any other country-level indicator. Use when the user asks for "a map of X", "where is Y grown/produced/emitted", "show global distribution of Z", or for a choropleth / heat-map style visualization of FAOSTAT data. Keywords — map, choropleth, world map, global distribution, country map, geographic, geospatial, heatmap, where, by country
 ---
 
 # FAOSTAT Choropleth Map

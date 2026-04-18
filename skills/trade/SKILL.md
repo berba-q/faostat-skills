@@ -1,6 +1,6 @@
 ---
 name: faostat-trade
-description: Use when the user asks about food import dependence, self-sufficiency ratio, supply chain risk, trade partners, trade concentration, food security vulnerability, import reliance, export dependence, or whether a country can feed itself for a specific commodity. Keywords: import, export, trade, self-sufficiency, dependency, supply chain, food security, trade partners, concentration risk, import reliance, vulnerability. Do NOT use for a comprehensive country food security profile → `faostat-country-profile`. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for side-by-side country comparison → `faostat-compare`.
+description: Use when the user asks about food import dependence, self-sufficiency ratio, supply chain risk, trade partners, trade concentration, food security vulnerability, import reliance, export dependence, or whether a country can feed itself for a specific commodity. Keywords — import, export, trade, self-sufficiency, dependency, supply chain, food security, trade partners, concentration risk, import reliance, vulnerability. Do NOT use for a comprehensive country food security profile → `faostat-country-profile`. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for side-by-side country comparison → `faostat-compare`.
 ---
 
 # Trade Dependency Analyzer

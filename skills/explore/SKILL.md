@@ -1,6 +1,6 @@
 ---
 name: faostat-explore
-description: Use when the user wants to discover what data is available in FAOSTAT, browse domains, understand what a domain contains, or is new to FAOSTAT and wants a guided tour. Use when the user mentions a topic and wants to know what FAOSTAT data covers it. Keywords: explore, discover, browse, what data, available, domains, catalog, tour, overview, what can I find, show me, help me understand, new to FAOSTAT, getting started
+description: Use when the user wants to discover what data is available in FAOSTAT, browse domains, understand what a domain contains, or is new to FAOSTAT and wants a guided tour. Use when the user mentions a topic and wants to know what FAOSTAT data covers it. Keywords — explore, discover, browse, what data, available, domains, catalog, tour, overview, what can I find, show me, help me understand, new to FAOSTAT, getting started
 ---
 
 # FAOSTAT Explorer

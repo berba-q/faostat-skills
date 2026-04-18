@@ -1,6 +1,6 @@
 ---
 name: faostat-trends
-description: Use when the user wants to identify biggest changes, fastest-growing or declining agricultural productions, or anomalies in FAOSTAT data over a time window for a region or set of countries. Keywords: trends, growth, decline, anomaly, change, biggest movers, acceleration, deceleration, monitoring, shift, surge, drop, spike. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for a country food security profile → `faostat-country-profile`. Do NOT use for side-by-side comparison → `faostat-compare`.
+description: Use when the user wants to identify biggest changes, fastest-growing or declining agricultural productions, or anomalies in FAOSTAT data over a time window for a region or set of countries. Keywords — trends, growth, decline, anomaly, change, biggest movers, acceleration, deceleration, monitoring, shift, surge, drop, spike. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for a country food security profile → `faostat-country-profile`. Do NOT use for side-by-side comparison → `faostat-compare`.
 ---
 
 # Agricultural Trend Monitor

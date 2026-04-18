@@ -1,6 +1,6 @@
 ---
 name: faostat-compare
-description: Use ONLY when the user explicitly asks to compare two or more specific named entities (countries, commodities, or regions) side by side. Keywords: compare, comparison, versus, vs, benchmark, countries, crops, production, yield, area harvested, trade, growth rate. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for a country food security profile → `faostat-country-profile`. Do NOT use for trend ranking (fastest growing/declining) → `faostat-trends`. Do NOT use for import dependency or supply chain risk → `faostat-trade`.
+description: Use ONLY when the user explicitly asks to compare two or more specific named entities (countries, commodities, or regions) side by side. Keywords — compare, comparison, versus, vs, benchmark, countries, crops, production, yield, area harvested, trade, growth rate. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for a country food security profile → `faostat-country-profile`. Do NOT use for trend ranking (fastest growing/declining) → `faostat-trends`. Do NOT use for import dependency or supply chain risk → `faostat-trade`.
 ---
 
 # Comparative Agricultural Analysis

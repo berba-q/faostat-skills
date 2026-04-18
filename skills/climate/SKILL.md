@@ -1,6 +1,6 @@
 ---
 name: faostat-climate
-description: Use when the user asks about agricultural emissions, climate impact of farming, agrifood carbon footprint, greenhouse gases from agriculture, deforestation, forest carbon sinks, temperature change, fertilizer emissions, N2O, land use change, emissions intensity, or the climate-agriculture nexus. Keywords: emissions, climate, carbon, greenhouse gas, GHG, deforestation, forest, temperature, warming, N2O, fertilizer emissions, land use, agrifood, emissions intensity, carbon sink. Do NOT use for a full country food security profile → `faostat-country-profile`. Do NOT use for trend ranking across commodities or countries → `faostat-trends`.
+description: Use when the user asks about agricultural emissions, climate impact of farming, agrifood carbon footprint, greenhouse gases from agriculture, deforestation, forest carbon sinks, temperature change, fertilizer emissions, N2O, land use change, emissions intensity, or the climate-agriculture nexus. Keywords — emissions, climate, carbon, greenhouse gas, GHG, deforestation, forest, temperature, warming, N2O, fertilizer emissions, land use, agrifood, emissions intensity, carbon sink. Do NOT use for a full country food security profile → `faostat-country-profile`. Do NOT use for trend ranking across commodities or countries → `faostat-trends`.
 ---
 
 # Agrifood Climate Analyzer

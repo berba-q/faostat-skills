@@ -1,6 +1,6 @@
 ---
 name: faostat-country-profile
-description: Use when the user asks for a food security profile, country agricultural overview, country hunger or nutrition assessment, or food system summary for a specific country. Keywords: country profile, food security, undernourishment, production, trade, nutrition, calorie supply, dietary energy. Do NOT use for import dependence and supply chain risk → `faostat-trade`. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for side-by-side country comparison → `faostat-compare`.
+description: Use when the user asks for a food security profile, country agricultural overview, country hunger or nutrition assessment, or food system summary for a specific country. Keywords — country profile, food security, undernourishment, production, trade, nutrition, calorie supply, dietary energy. Do NOT use for import dependence and supply chain risk → `faostat-trade`. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for side-by-side country comparison → `faostat-compare`.
 ---
 
 # Country Food Security Profile

@@ -1,6 +1,6 @@
 ---
 name: faostat-story
-description: Use when the user wants to build a data-driven narrative or article from FAOSTAT data for journalists, researchers, or general-audience communicators. Use when the user provides a research question, story angle, or topic they want to explore as an HTML data story with embedded interactive charts. Keywords: story, narrative, article, journalism, data story, investigation, angle, headline, write-up, explainer, data journalism, long-read. Do NOT use when the user asks for an "analytical brief", "policy brief", "FAOSTAT brief", or a PDF policymaker-facing document — route to `faostat-analytical-brief` instead. Do NOT use for academic/scientific papers or single-page infographics.
+description: Use when the user wants to build a data-driven narrative or article from FAOSTAT data for journalists, researchers, or general-audience communicators. Use when the user provides a research question, story angle, or topic they want to explore as an HTML data story with embedded interactive charts. Keywords — story, narrative, article, journalism, data story, investigation, angle, headline, write-up, explainer, data journalism, long-read. Do NOT use when the user asks for an "analytical brief", "policy brief", "FAOSTAT brief", or a PDF policymaker-facing document — route to `faostat-analytical-brief` instead. Do NOT use for academic/scientific papers or single-page infographics.
 ---
 
 # Data Storyteller

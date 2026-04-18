@@ -1,6 +1,6 @@
 ---
 name: faostat-commodity
-description: Use when the user asks about a specific crop or commodity — global production, top producers, yield trends, trade flows, or a commodity briefing. Keywords: commodity, crop, wheat, rice, maize, coffee, cocoa, soybean, sugar, cotton, palm oil, production rankings, top producers, yield, trade, global supply, briefing, deep dive. Do NOT use for side-by-side entity comparison → `faostat-compare`. Do NOT use for a country food security profile → `faostat-country-profile`. Do NOT use for trend ranking across commodities → `faostat-trends`.
+description: Use when the user asks about a specific crop or commodity — global production, top producers, yield trends, trade flows, or a commodity briefing. Keywords — commodity, crop, wheat, rice, maize, coffee, cocoa, soybean, sugar, cotton, palm oil, production rankings, top producers, yield, trade, global supply, briefing, deep dive. Do NOT use for side-by-side entity comparison → `faostat-compare`. Do NOT use for a country food security profile → `faostat-country-profile`. Do NOT use for trend ranking across commodities → `faostat-trends`.
 ---
 
 # Commodity Deep Dive

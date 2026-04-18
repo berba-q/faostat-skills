@@ -113,7 +113,7 @@ Write in this order. Do not skip ahead — Abstract last, Conclusion second-to-l
 - Title (≤ 15 words, includes the outcome, the domain, and the time window)
 - Author block (name, affiliation, email)
 - Running head
-- Keywords: 4–6, include "FAOSTAT"
+- Keywords — 4–6, include "FAOSTAT"
 - Data availability statement (points to the xlsx appendix and to FAOSTAT)
 
 #### Introduction (≤ 800 words)
