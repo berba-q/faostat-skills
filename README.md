@@ -13,7 +13,11 @@ AI-powered analysis skills for the [UN FAOSTAT](https://www.fao.org/faostat/en/#
 
 **Claude Code**
 ```bash
-claude plugin install berba-q/faostat-skills
+# 1. Add this repo as a marketplace (one-time)
+/plugin marketplace add berba-q/faostat-skills
+
+# 2. Install
+claude plugin install faostat-skills@faostat
 ```
 
 **OpenAI Codex**
@@ -45,14 +49,19 @@ Then configure your credentials (one-time setup) by asking your AI assistant:
 
 ### Claude Code
 
+Claude Code uses a marketplace model. Add this repo as a marketplace source once, then install:
+
 ```bash
-claude plugin install faostat-skills
+# Step 1 — add marketplace (one-time setup)
+/plugin marketplace add berba-q/faostat-skills
+
+# Step 2 — install the plugin
+claude plugin install faostat-skills@faostat
 ```
 
-Or install directly from GitHub:
-
+To update to a new version later:
 ```bash
-claude plugin install berba-q/faostat-skills
+claude plugin update faostat-skills@faostat
 ```
 
 ### OpenAI Codex

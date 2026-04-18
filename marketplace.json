@@ -1,0 +1,17 @@
+{
+  "name": "faostat",
+  "owner": {
+    "name": "Griffiths Obli-Laryea"
+  },
+  "plugins": [
+    {
+      "name": "faostat-skills",
+      "source": {
+        "source": "npm",
+        "package": "faostat-skills",
+        "version": "^0.2.0"
+      },
+      "description": "AI skills for analyzing UN FAOSTAT food & agriculture data — country profiles, trade analysis, climate assessments, commodity briefings, maps, infographics, and more."
+    }
+  ]
+}
