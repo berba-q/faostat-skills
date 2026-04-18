@@ -5,20 +5,29 @@
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-blueviolet)](https://claude.com/claude-code)
 [![Codex](https://img.shields.io/badge/Codex-compatible-green)](https://openai.com)
 
-AI-powered analysis skills for the [UN FAOSTAT](https://www.fao.org/faostat/en/#data) database — the world's most comprehensive source of food and agriculture statistics. These platform-agnostic skills guide your AI assistant through multi-step analytical workflows: country food security profiles, trade dependency analysis, commodity deep dives, agrifood climate assessments, and data-driven storytelling.
+AI-powered analysis skills for the [UN FAOSTAT](https://www.fao.org/faostat/en/#data) database, the world's most comprehensive source of food and agriculture statistics. These platform-agnostic skills guide your AI assistant through multi-step analytical workflows: country food security profiles, trade dependency analysis, commodity deep dives, agrifood climate assessments, and data-driven storytelling.
 
 **Works with:** Claude Code, OpenAI Codex, and any AI assistant that supports the `SKILL.md` format.
 
 ### Quick Start
 
+**Claude Code**
 ```bash
-# Claude Code
-claude plugin install faostat-skills
+claude plugin install berba-q/faostat-skills
+```
 
-# Then ask:
-# "Give me a food security profile for Kenya"
-# "Compare wheat yields in France, USA, and India"
-# "How dependent is Egypt on wheat imports?"
+**OpenAI Codex**
+```bash
+git clone https://github.com/berba-q/faostat-skills.git ~/.agents/skills/faostat-skills
+```
+
+**Other AI assistants** — copy the `skills/` directory to wherever your tool discovers skill files. Consult your provider's documentation for the correct skills directory path.
+
+Once installed, try asking:
+```
+"Give me a food security profile for Kenya"
+"Compare wheat yields in France, USA, and India"
+"How dependent is Egypt on wheat imports?"
 ```
 
 ## Prerequisites
@@ -84,7 +93,7 @@ Copy the `skills/` directory to wherever your AI tool discovers skill files. Eac
 | **Choropleth Map** | `/faostat-map` | Interactive world map of any FAOSTAT country-level metric |
 | **Data Visualizer** | `/faostat-viz` | Interactive Chart.js HTML charts — use when the chart itself is the deliverable |
 | **Infographic** | `/faostat-infographic` | Shareable single-page visual summary for social, press, or pitch decks |
-| **Data Storyteller** | `/faostat-story` | Data-driven narrative article with embedded charts for journalism and research |
+| **Data Storyteller** | `/faostat-story` | Data-driven narrative article with embedded charts for research |
 | **Analytical Brief** | `/faostat-analytical-brief` | Multi-page policymaker-facing brief in FAOSTAT house style (PDF + xlsx appendix) |
 | **Scientific Paper** | `/faostat-scientific-paper` | Peer-reviewable IMRaD research paper (docx + xlsx + bib) |
 
