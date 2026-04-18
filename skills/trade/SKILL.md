@@ -1,6 +1,6 @@
 ---
 name: faostat-trade
-description: Use when the user asks about food import dependence, self-sufficiency ratio, supply chain risk, trade partners, trade concentration, food security vulnerability, import reliance, export dependence, or whether a country can feed itself for a specific commodity. Keywords: import, export, trade, self-sufficiency, dependency, supply chain, food security, trade partners, concentration risk, import reliance, vulnerability
+description: Use when the user asks about food import dependence, self-sufficiency ratio, supply chain risk, trade partners, trade concentration, food security vulnerability, import reliance, export dependence, or whether a country can feed itself for a specific commodity. Keywords: import, export, trade, self-sufficiency, dependency, supply chain, food security, trade partners, concentration risk, import reliance, vulnerability. Do NOT use for a comprehensive country food security profile → `faostat-country-profile`. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for side-by-side country comparison → `faostat-compare`.
 ---
 
 # Trade Dependency Analyzer
@@ -13,16 +13,28 @@ Before starting, verify that the FAOSTAT MCP tools are available: `faostat_searc
 
 ## Domain Reference (CRITICAL -- use exactly these codes)
 
-| Domain | Code | Content |
-|--------|------|---------|
-| Crops & Livestock Products | **QCL** | Domestic production (area, yield, production volume) |
-| Trade Matrix | **TM** | Bilateral trade -- imports and exports by partner country |
+| Domain | Code | Content | When to use |
+|--------|------|---------|-------------|
+| Crops & Livestock Products | **QCL** | Domestic production (area, yield, production volume) | Always for production |
+| Crops & Livestock Trade (aggregate) | **TCL** | Country-level totals for import/export quantity and value | **Use for total imports / total exports of a country** |
+| Detailed Trade Matrix | **TM** | Bilateral trade by partner country | Use ONLY for "who are the top partners" breakdown |
+| Food Balance Sheets | **FBS** | Supply utilization including feed, seed, stock change | Use for food-specific SSR (element 645 Food, 5131 Feed, etc.) |
+
+**CRITICAL — TM vs TCL.** TM returns one row per (reporter × partner × element × year). Summing TM rows to get national imports/exports is fragile (mirror-data gaps, re-exports). **Pull aggregate import/export volumes from TCL.** Only drop into TM when you need the partner breakdown.
 
 ## Element Code Reference (CRITICAL)
 
-- **Production quantity**: filter code `2510`, display code `5510`
+- **Production quantity (QCL)**: filter code `2510`, display code `5510`
+- **Import quantity (TCL)**: filter code `2610`
+- **Export quantity (TCL)**: filter code `2910`
+- **Import value (TCL, USD 1000)**: filter code `2612`
+- **Export value (TCL, USD 1000)**: filter code `2912`
 - For `faostat_get_data` queries, use FILTER codes in the `element` parameter (e.g., `element='2510'`)
 - For `faostat_get_rankings` queries, use DISPLAY codes in the `element_code` parameter (e.g., `element_code='5510'`)
+
+## Area-Code Pitfall: China
+
+FAOSTAT has both `China` (area code 351, aggregate including Hong Kong SAR, Macao SAR, and Taiwan Province of China) and `China, mainland` (area code 41, mainland only). **Default to composite `China` (351)** for any single-country analysis (user preference, Apr 2026). Do NOT substitute `China, mainland` (41) unless the user asks for 41 explicitly. In trade data this means the "China" total will include trade through HK / Macao / Taiwan — flag this to the user and note that FAOSTAT's own publications default to 41, so the numbers here are larger than the FAO data-portal default.
 
 ## Workflow
 
@@ -39,14 +51,18 @@ If the user provides both in their initial message, proceed directly. If either 
 1. Resolve the country to an area code:
    `faostat_search_codes(domain_code='QCL', dimension_id='area', query='<country>')`
    - If `requires_confirmation` is true, present the matching options and ask the user to choose. Do NOT proceed until confirmed.
+   - If the user asked about "China" generically, default to composite `China` (351) and offer `China, mainland` (41) as an opt-in. Do not proceed with 41 unless the user asks for 41 explicitly.
 
 2. Resolve the commodity to an item code in the production domain:
    `faostat_search_codes(domain_code='QCL', dimension_id='item', query='<commodity>')`
    - Handle `requires_confirmation` the same way.
 
-3. Also resolve the commodity in the trade domain (item codes may differ):
-   `faostat_search_codes(domain_code='TM', dimension_id='item', query='<commodity>')`
+3. Resolve the commodity in the aggregate-trade domain (item codes may differ):
+   `faostat_search_codes(domain_code='TCL', dimension_id='item', query='<commodity>')`
    - Handle `requires_confirmation`.
+
+4. If you will also do a partner breakdown in Step 6, resolve the item in TM:
+   `faostat_search_codes(domain_code='TM', dimension_id='item', query='<commodity>')`
 
 ### Step 3: Pull domestic production
 
@@ -57,27 +73,36 @@ faostat_get_data(
   area='<area_code>',
   item='<item_code_qcl>',
   element='2510',
+  year='2014,2015,2016,2017,2018,2019,2020,2021,2022,2023',
   response_format='compact'
 )
 ```
 Extract production quantities for the most recent 10-15 years to establish a trend.
 
-### Step 4: Pull trade data
+> **Year-range syntax.** Use an explicit comma-separated year list. Colon ranges like `'2014:2023'` have returned empty results in practice — avoid them.
 
-Query the TM domain for imports and exports of this commodity for the country:
+### Step 4: Pull aggregate trade volumes (TCL, not TM)
+
+Pull import and export quantities for this country-commodity pair from **TCL** (country-level aggregates):
 ```
 faostat_get_data(
-  domain_code='TM',
+  domain_code='TCL',
   area='<area_code>',
-  item='<item_code_tm>',
+  item='<item_code_tcl>',
+  element='2610,2910',              # 2610 Import qty, 2910 Export qty
+  year='2014,2015,...,2023',
   response_format='compact'
 )
 ```
-Extract:
-- **Total import volume** (by year)
-- **Total export volume** (by year)
-- **Import values** (USD, if available)
-- **Partner country breakdown** -- who supplies the imports, who receives the exports
+
+For USD trade values, add `2612` (Import value) and `2912` (Export value).
+
+Extract, per year:
+- **Total import quantity** (tonnes)
+- **Total export quantity** (tonnes)
+- **Import value** and **Export value** (USD 1000, if needed)
+
+> Do NOT pull these from TM. TM gives partner-level rows that must be aggregated, and mirror-data gaps / re-exports distort the total. Use TM only in Step 6.
 
 ### Step 5: Calculate self-sufficiency ratio
 
@@ -86,6 +111,8 @@ For each year where data is available, calculate:
 ```
 Self-Sufficiency Ratio (SSR) = Production / (Production + Imports - Exports)
 ```
+
+This is a "net availability" proxy. For a stricter food-focused SSR that accounts for feed, seed, and stock change, pull from **FBS** instead (element 5511 Production vs 5301 Domestic Supply). If FBS is available for the country-commodity, prefer it and note the switch in the methodology section.
 
 Interpretation:
 - **SSR > 1.0** -- the country produces more than it consumes; net exporter
@@ -96,15 +123,31 @@ Interpretation:
 
 Calculate SSR for the latest year and for 5 and 10 years ago (if data available) to show the trend.
 
-### Step 6: Identify trading partners and concentration risk
+### Step 6: Identify trading partners and concentration risk (TM)
 
-From the trade data, rank import partners by volume:
-1. List the top 5 import source countries with their share of total imports.
+Now — and only now — pull the partner breakdown from TM:
+```
+faostat_get_data(
+  domain_code='TM',
+  area='<area_code>',
+  item='<item_code_tm>',
+  element='5622,5922',              # Import qty, Export qty in TM element codes
+  year='<latest available year>',
+  response_format='compact',
+  limit=500
+)
+```
+Note: TM uses different element codes than TCL. If unsure, `faostat_search_codes(domain_code='TM', dimension_id='element', query='import')` will surface the right pair.
+
+From the partner data, rank import partners by volume:
+1. List the top 5 import source countries with their share of total imports (use the TCL total from Step 4 as the denominator — TM partner totals sometimes don't perfectly reconcile).
 2. Calculate a concentration metric: what percentage of imports comes from the top 1, top 2, and top 3 suppliers?
 3. Assess concentration risk:
    - **Top 1 supplier > 50%** -- HIGH concentration risk (single point of failure)
    - **Top 3 suppliers > 80%** -- MODERATE concentration risk
    - **No single supplier > 30%** -- LOW concentration risk (diversified)
+
+If TM data is sparse for the latest year (common — TM reporting often lags TCL by 1 year), step back to the most recent year with partner data and note the year mismatch.
 
 ### Step 7: Trend analysis
 
@@ -152,3 +195,19 @@ Structure the output as follows:
 - For `faostat_get_data`, use FILTER element codes (e.g., '2510'). For `faostat_get_rankings`, use DISPLAY element codes (e.g., '5510').
 - If production data returns zero or null for a country-commodity pair, note this explicitly -- it may mean the country does not produce this commodity at all (SSR = 0, fully import-dependent).
 - Always include the source attribution line at the end of any output.
+
+## Error Handling and Reliability Notes
+
+- **`faostat_get_rankings` sometimes returns HTTP 500.** If the tool fails, reconstruct rankings by calling `faostat_get_data` for the relevant element/year across all reporting countries and sorting client-side. Document the fallback in the methodology section of the output.
+- **China composite rule (user preference, Apr 2026).** Default to composite `China` (351) for single-country analysis. Offer `China, mainland` (41) as an opt-in. Flag the choice in output.
+- **TM reporting lag.** TM partner data typically lags TCL aggregate data by ~1 year. If TM has no data for the latest year, drop to the most recent year available and state the mismatch.
+- **Year range syntax.** Prefer explicit comma-separated year lists (`'2014,2015,...,2023'`). Colon ranges (`'2014:2023'`) have returned empty results in some MCP configurations.
+
+## Related Skills
+
+| If you need… | Use |
+|---|---|
+| Full country food security profile | `/faostat-country-profile` |
+| Global commodity supply overview | `/faostat-commodity` |
+| Trend ranking over time | `/faostat-trends` |
+| Side-by-side country comparison | `/faostat-compare` |

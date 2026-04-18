@@ -71,23 +71,28 @@ Copy the `skills/` directory to wherever your AI tool discovers skill files. Eac
 | Skill | Command | Description |
 |-------|---------|-------------|
 | **Country Food Security Profile** | `/faostat-country-profile` | Comprehensive food security assessment — production, trade, nutrition, and risk indicators for any country |
-| **Comparative Agricultural Analysis** | `/faostat-compare` | Side-by-side comparison of agricultural metrics across countries, commodities, or regions |
+| **Comparative Agricultural Analysis** | `/faostat-compare` | Side-by-side comparison of agricultural metrics for two or more specific named entities |
 | **Commodity Deep Dive** | `/faostat-commodity` | Complete global briefing for any commodity — production rankings, yield trends, trade flows |
-
-### Tier 2: Specialized
-
-| Skill | Command | Description |
-|-------|---------|-------------|
-| **Agrifood Climate Analyzer** | `/faostat-climate` | Climate-agriculture nexus analysis — emissions profiles, temperature trends, land use, inputs-emissions links |
 | **Trade Dependency Analyzer** | `/faostat-trade` | Import dependence assessment with self-sufficiency ratios and supply chain risk indicators |
-| **Data Visualizer** | `/faostat-viz` | Generate interactive Chart.js HTML charts from FAOSTAT data |
+| **Agrifood Climate Analyzer** | `/faostat-climate` | Climate-agriculture nexus analysis — emissions profiles, temperature trends, land use, inputs-emissions links |
+| **Agricultural Trend Monitor** | `/faostat-trends` | Identify biggest changes and anomalies in agricultural data over a time window |
 
-### Tier 3: Creative
+### Tier 2: Outputs
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| **Agricultural Trend Monitor** | `/faostat-trends` | Identify biggest changes and anomalies in agricultural data over a time window |
-| **Data Storyteller** | `/faostat-story` | Build data-driven narratives with embedded charts for journalism and research |
+| **Choropleth Map** | `/faostat-map` | Interactive world map of any FAOSTAT country-level metric |
+| **Data Visualizer** | `/faostat-viz` | Interactive Chart.js HTML charts — use when the chart itself is the deliverable |
+| **Infographic** | `/faostat-infographic` | Shareable single-page visual summary for social, press, or pitch decks |
+| **Data Storyteller** | `/faostat-story` | Data-driven narrative article with embedded charts for journalism and research |
+| **Analytical Brief** | `/faostat-analytical-brief` | Multi-page policymaker-facing brief in FAOSTAT house style (PDF + xlsx appendix) |
+| **Scientific Paper** | `/faostat-scientific-paper` | Peer-reviewable IMRaD research paper (docx + xlsx + bib) |
+
+### Tier 3: Utilities
+
+| Skill | Command | Description |
+|-------|---------|-------------|
+| **Data Export** | `/faostat-export-dataset` | Clean tabular data bundle (xlsx + csv + data dictionary) — when data itself is the deliverable |
 | **FAOSTAT Explorer** | `/faostat-explore` | Guided discovery of FAOSTAT's data catalog with sample data and explanations |
 
 ## Examples

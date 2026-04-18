@@ -1,6 +1,6 @@
 ---
 name: faostat-trends
-description: Use when the user wants to identify biggest changes, fastest-growing or declining agricultural productions, or anomalies in FAOSTAT data over a time window for a region or set of countries. Keywords: trends, growth, decline, anomaly, change, biggest movers, acceleration, deceleration, monitoring, shift, surge, drop, spike
+description: Use when the user wants to identify biggest changes, fastest-growing or declining agricultural productions, or anomalies in FAOSTAT data over a time window for a region or set of countries. Keywords: trends, growth, decline, anomaly, change, biggest movers, acceleration, deceleration, monitoring, shift, surge, drop, spike. Do NOT use for a global commodity briefing → `faostat-commodity`. Do NOT use for a country food security profile → `faostat-country-profile`. Do NOT use for side-by-side comparison → `faostat-compare`.
 ---
 
 # Agricultural Trend Monitor
@@ -30,7 +30,7 @@ Use `faostat_search_codes` with `domain_code='QCL'` and `dimension_id='area'` to
 
 ### Step 3 — Pull Production Data for Major Commodity Groups
 
-Query the **QCL** (Crops and Livestock Products) domain using `faostat_get_data`. Pull production quantity data (element filter code `'5510'`) across major commodity groups.
+Query the **QCL** (Crops and Livestock Products) domain using `faostat_get_data`. Pull production quantity data (element FILTER code `'2510'`) across major commodity groups.
 
 For broad monitoring, query across these key items:
 - Cereals (wheat, rice, maize, barley, sorghum, millet)
@@ -42,9 +42,14 @@ For broad monitoring, query across these key items:
 
 Use `faostat_search_codes` with `domain_code='QCL'` and `dimension_id='item'` to resolve each item name to its item code.
 
-For each query, use `response_format='compact'` when pulling data for multiple entities to keep payloads efficient. Set `limit` appropriately to cover the full time window.
+For each query, use `response_format='compact'` when pulling data for multiple entities to keep payloads efficient. Set `limit` appropriately to cover the full time window. Use explicit comma-separated year lists (e.g., `year='2019,2020,2021,2022,2023'`) — colon ranges like `'2019:2023'` have returned empty in practice.
 
-**Important:** Element FILTER codes differ from DISPLAY codes. When calling `faostat_get_data`, use the filter code for the `element` parameter. Production quantity filter code is `'5510'`. If you need to look up the correct filter code, use `faostat_search_codes` with `dimension_id='element'`.
+**CRITICAL — FILTER vs DISPLAY.** Element codes come in two flavors:
+- `faostat_get_data(..., element='2510')` uses the **FILTER** code for Production quantity.
+- `faostat_get_rankings(..., element_code='5510')` uses the **DISPLAY** code for Production quantity.
+Do not invert these. If in doubt, `faostat_search_codes(domain_code='QCL', dimension_id='element', query='production')` returns both codes for every element.
+
+**China composite rule (user preference, Apr 2026).** When building a regional aggregate or top-N ranking that includes China, default to composite `China` (area code 351) — the roll-up of mainland + HK SAR + Macao SAR + Taiwan. Do NOT substitute `China, mainland` (41) unless the user specifies 41 explicitly. Flag the choice in the output and note that FAOSTAT's own publications default to 41, so the numbers here are marginally larger than the FAO data-portal default.
 
 ### Step 4 — Calculate Period-over-Period Changes
 
@@ -112,3 +117,20 @@ Suggest to the user:
 - "Would you like me to visualize any of these trends as charts?" (invokes the visualization skill)
 - "Want a deeper dive into any specific commodity or country?" (invokes the commodity or country-profile skill)
 - "Should I check the trade data for any of the anomalies?" (invokes the trade skill)
+
+## Error Handling and Reliability Notes
+
+- **`faostat_get_rankings` sometimes returns HTTP 500.** If you were planning to use it to pre-rank top producers before pulling time series, fall back to `faostat_get_data` with a country list and sort client-side. Document the fallback in the output.
+- **FILTER vs DISPLAY codes.** See Step 3 — the two forms are not interchangeable.
+- **Colon year ranges return empty.** Use comma-separated year lists.
+- **Zero baseline excluded.** In Step 4 exclude any country-commodity pairs where the baseline is zero or missing — dividing by zero produces infinite growth rates that dominate the rankings.
+
+## Related Skills
+
+| If you need… | Use |
+|---|---|
+| Commodity deep dive | `/faostat-commodity` |
+| Country food security profile | `/faostat-country-profile` |
+| Side-by-side comparison | `/faostat-compare` |
+| Import dependency | `/faostat-trade` |
+| Visualize results as charts | `/faostat-viz` |

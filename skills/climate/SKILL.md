@@ -1,6 +1,6 @@
 ---
 name: faostat-climate
-description: Use when the user asks about agricultural emissions, climate impact of farming, agrifood carbon footprint, greenhouse gases from agriculture, deforestation, forest carbon sinks, temperature change, fertilizer emissions, N2O, land use change, emissions intensity, or the climate-agriculture nexus. Keywords: emissions, climate, carbon, greenhouse gas, GHG, deforestation, forest, temperature, warming, N2O, fertilizer emissions, land use, agrifood, emissions intensity, carbon sink
+description: Use when the user asks about agricultural emissions, climate impact of farming, agrifood carbon footprint, greenhouse gases from agriculture, deforestation, forest carbon sinks, temperature change, fertilizer emissions, N2O, land use change, emissions intensity, or the climate-agriculture nexus. Keywords: emissions, climate, carbon, greenhouse gas, GHG, deforestation, forest, temperature, warming, N2O, fertilizer emissions, land use, agrifood, emissions intensity, carbon sink. Do NOT use for a full country food security profile → `faostat-country-profile`. Do NOT use for trend ranking across commodities or countries → `faostat-trends`.
 ---
 
 # Agrifood Climate Analyzer
@@ -26,6 +26,25 @@ Before starting, verify that the FAOSTAT MCP tools are available: `faostat_searc
 | Pesticides Use | **RP** | Pesticide application data |
 | Pesticides Trade | **RT** | Pesticide import/export data |
 
+## Element Filter Reference
+
+Every `faostat_get_data` call below specifies an `element` filter. Without one, emissions domains return dozens of sub-elements per year and the payload explodes. If an element code is unfamiliar, resolve via `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='...')`.
+
+| Metric | Domain | Filter code |
+|--------|--------|-------------|
+| Emissions (CO2eq) | GT | `724313` |
+| Share in total emissions (%) | EM | `7231` |
+| Emissions per capita (kg CO2eq/person) | EM | `723112` |
+| Temperature change (°C) | ET | `7271` |
+| Net forest conversion (area, ha) | GF | `6646` |
+| Forest land emissions (CO2eq) | GF | `724313` |
+| Agricultural land (area, ha) | RL | `5110` |
+| Forest land (area, ha) | RL | `5110` (item 6646 Forest land) |
+| N fertilizer use (tonnes) | RFN | `5157` |
+| Pesticide use (tonnes) | RP | `5157` |
+
+Year-range syntax: use explicit comma-separated lists (`year='2014,2015,...,2023'`). Colon ranges (`'2014:2023'`) have returned empty in practice.
+
 ## Sub-workflow Detection
 
 Read the user's question and select the most appropriate sub-workflow:
@@ -43,15 +62,40 @@ If the question does not clearly match one sub-workflow, present the five option
 1. Ask for the country if not already specified.
 2. Resolve the country name to an area code using `faostat_search_codes(domain_code='GT', dimension_id='area', query='<country>')`.
    - If `requires_confirmation` is true in the response, present the matching options and ask the user to choose. Do NOT proceed until the user confirms.
-3. Pull agrifood systems emissions totals from the **GT** domain:
-   `faostat_get_data(domain_code='GT', area='<area_code>', response_format='compact')`
-   Focus on the most recent 10 years. Identify total agrifood emissions and breakdown by source category (farm gate, land use, pre/post production).
+   - **China rule.** Default to composite `China` (area code 351) — the roll-up of mainland + HK SAR + Macao SAR + Taiwan — not `China, mainland` (41), unless the user specifies 41 explicitly. Note in the output that FAOSTAT's own publications default to 41, so this profile's China total is marginally larger than the FAO data-portal default.
+3. Pull agrifood systems emissions totals from the **GT** domain (with element and year filters so the payload is manageable):
+   ```
+   faostat_get_data(
+     domain_code='GT',
+     area='<area_code>',
+     element='724313',                    # Emissions (CO2eq) in CO2 equivalents
+     year='2014,2015,2016,2017,2018,2019,2020,2021,2022,2023',
+     response_format='compact'
+   )
+   ```
+   Identify total agrifood emissions trend and the breakdown by source category (farm gate, land use, pre/post production — these come through as different `item` codes within GT).
 4. Pull emissions indicators from the **EM** domain:
-   `faostat_get_data(domain_code='EM', area='<area_code>', response_format='compact')`
-   Extract per capita emissions, share of national total, emissions per value of agricultural production.
+   ```
+   faostat_get_data(
+     domain_code='EM',
+     area='<area_code>',
+     element='7231,723112',                # Share in total (%), per capita (kg CO2eq)
+     year='2019,2020,2021,2022,2023',
+     response_format='compact'
+   )
+   ```
+   Extract per capita emissions and share of national total.
 5. Pull temperature change data from the **ET** domain:
-   `faostat_get_data(domain_code='ET', area='<area_code>', response_format='compact')`
-   Identify the warming trend over the available period.
+   ```
+   faostat_get_data(
+     domain_code='ET',
+     area='<area_code>',
+     element='7271',                       # Temperature change (°C)
+     year='2014,2015,2016,2017,2018,2019,2020,2021,2022,2023',
+     response_format='compact'
+   )
+   ```
+   Identify the warming trend over the available period. ET data is monthly — filter to annual items if needed or aggregate to annual averages.
 6. Synthesize into a structured profile:
    - **Agrifood Emissions Overview** -- total emissions, trend (rising/falling/stable), breakdown by source
    - **Normalized Metrics** -- per capita, share of national emissions, per dollar of agricultural output
@@ -64,10 +108,27 @@ If the question does not clearly match one sub-workflow, present the five option
 1. Ask for the countries or region to compare (minimum 2, maximum 10). Accept country names, region names, or a mix.
 2. Resolve each entity to area codes using `faostat_search_codes(domain_code='GT', dimension_id='area', query='<name>')`.
    - Handle `requires_confirmation` for each entity separately. Do NOT proceed until all codes are confirmed.
-3. Pull emissions totals from the **GT** domain for all entities:
-   `faostat_get_data(domain_code='GT', area='<code1>,<code2>,...', response_format='compact')`
+   - Default `China` → composite `China` (351), not `China, mainland` (41).
+3. Pull emissions totals from the **GT** domain for all entities — always with element and year filters:
+   ```
+   faostat_get_data(
+     domain_code='GT',
+     area='<code1>,<code2>,...',
+     element='724313',
+     year='2014,2015,...,2023',
+     response_format='compact'
+   )
+   ```
 4. Pull emissions indicators from the **EM** domain for all entities:
-   `faostat_get_data(domain_code='EM', area='<code1>,<code2>,...', response_format='compact')`
+   ```
+   faostat_get_data(
+     domain_code='EM',
+     area='<code1>,<code2>,...',
+     element='7231,723112',
+     year='2019,2020,2021,2022,2023',
+     response_format='compact'
+   )
+   ```
    Extract per capita and share metrics for normalization.
 5. Present comparison:
    - **Absolute emissions** -- rank by total agrifood emissions (latest year)
@@ -149,4 +210,21 @@ If the question does not clearly match one sub-workflow, present the five option
 - When `requires_confirmation` is true in a search result, always present options to the user and wait for their choice.
 - Use `response_format='compact'` when querying multiple entities or large time ranges.
 - For rankings, use DISPLAY element codes (e.g., '5510' for production). For data filtering, use FILTER codes (e.g., '2510' for production).
+- **Always pass an `element` filter to `faostat_get_data`.** Emissions domains return dozens of sub-elements per year and the payload explodes without one.
+- **Always pass an explicit comma-separated `year` list.** Colon ranges like `'2014:2023'` have returned empty in practice.
 - Always include the source attribution line at the end of any output.
+
+## Error Handling and Reliability Notes
+
+- **`faostat_get_rankings` sometimes returns HTTP 500.** If you need rankings (e.g., "top 10 emitters" before the comparison in Sub-workflow B), fall back to `faostat_get_data` across all reporting countries and sort client-side. Document the fallback in the output.
+- **China aggregate rule (user preference, Apr 2026).** Default to composite `China` (351) — the roll-up of mainland + HK SAR + Macao SAR + Taiwan. Do NOT substitute `China, mainland` (41) unless the user specifies 41 explicitly. State the choice in the output and note that FAOSTAT's own publications default to 41, so the numbers here are marginally larger than the FAO data-portal default.
+- **Empty return with colon year range.** Retry with a comma-list.
+- **ET domain is monthly.** Filter to a single month (e.g., Annual `item='6078'`) or compute an annual mean client-side.
+
+## Related Skills
+
+| If you need… | Use |
+|---|---|
+| Full country food security profile | `/faostat-country-profile` |
+| Commodity production context | `/faostat-commodity` |
+| Trend ranking across countries | `/faostat-trends` |

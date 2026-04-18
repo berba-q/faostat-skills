@@ -1,6 +1,6 @@
 ---
 name: faostat-viz
-description: Use when the user asks to visualize, chart, graph, or plot FAOSTAT data, or when they want a visual representation of agricultural statistics. Also use when another skill needs to produce a chart. Keywords: chart, graph, plot, visualize, visualization, bar chart, line chart, scatter plot, stacked bar, HTML, interactive, Chart.js, trend chart, comparison chart
+description: Use when the user asks to visualize, chart, graph, or plot FAOSTAT data, or when they want a visual representation of agricultural statistics. Also use when another skill needs to produce a chart. Keywords: chart, graph, plot, visualize, visualization, bar chart, line chart, scatter plot, stacked bar, HTML, interactive, Chart.js, trend chart, comparison chart. Do NOT use when the user wants a shareable, public-facing one-pager or social graphic → use `faostat-infographic`. Do NOT use when the user wants a full narrative report with charts → use `faostat-story` or `faostat-analytical-brief`.
 ---
 
 # FAOSTAT Data Visualizer
@@ -158,3 +158,11 @@ This ensures the insight is captured even if the user cannot view the chart imme
 - Use the colorblind-friendly palette defined above. Do not use default Chart.js colors.
 - The HTML file must be fully standalone -- no external dependencies except the Chart.js CDN.
 - Always include the source attribution line at the end of any text output as well.
+
+## Related Skills
+
+| If you need… | Use |
+|---|---|
+| Shareable one-pager / social graphic | `/faostat-infographic` |
+| Full narrative article with charts | `/faostat-story` |
+| Policy report with charts | `/faostat-analytical-brief` |

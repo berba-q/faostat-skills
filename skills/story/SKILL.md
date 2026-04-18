@@ -1,6 +1,6 @@
 ---
 name: faostat-story
-description: Use when the user wants to build a data-driven narrative, article, or report from FAOSTAT data for journalists, researchers, or communicators. Use when the user provides a research question, story angle, or topic they want to explore as a data story with embedded charts. Keywords: story, narrative, article, journalism, report, data story, investigation, angle, headline, write-up, briefing, explainer, data journalism
+description: Use when the user wants to build a data-driven narrative or article from FAOSTAT data for journalists, researchers, or general-audience communicators. Use when the user provides a research question, story angle, or topic they want to explore as an HTML data story with embedded interactive charts. Keywords: story, narrative, article, journalism, data story, investigation, angle, headline, write-up, explainer, data journalism, long-read. Do NOT use when the user asks for an "analytical brief", "policy brief", "FAOSTAT brief", or a PDF policymaker-facing document — route to `faostat-analytical-brief` instead. Do NOT use for academic/scientific papers or single-page infographics.
 ---
 
 # Data Storyteller
@@ -36,11 +36,15 @@ Based on the story angle, determine which FAOSTAT domains contain relevant data.
 
 Common domain mappings:
 - Production stories: **QCL** (Crops and Livestock Products)
-- Trade stories: **TM** (Trade Matrix)
+- Trade stories — **aggregate flows** (total imports/exports for a country-commodity): **TCL** (Crops and Livestock Trade, country-level)
+- Trade stories — **partner / bilateral flows** (who ships to whom): **TM** (Detailed Trade Matrix)
 - Food security stories: **FS** (Food Security), **FBS** (Food Balance Sheets)
 - Climate/emissions stories: **GT** (Emissions Totals), **ET** (Temperature Change), **GF** (Forests)
 - Input stories: **RFN/RFM/RFB** (Fertilizers), **RP** (Pesticides)
 - Land use stories: **RL** (Land Use)
+- Producer prices: **PP**
+
+**Do not use TM for national totals.** TM returns one row per (reporter × partner × year). Summing them to get a country's total is fragile (mirror-data gaps, re-exports). Pull totals from TCL and drop into TM only when the narrative calls for a partner breakdown ("who buys Ukraine's wheat", "who supplies Egypt").
 
 ### Step 3 — Resolve Codes and Pull Data
 
@@ -54,9 +58,15 @@ For each entity referenced in the story:
 
    **Important:** Element FILTER codes differ from DISPLAY codes. When calling `faostat_get_data`, use the filter code for the `element` parameter (e.g., filter `'2510'` for Production). When calling `faostat_get_rankings`, use the DISPLAY code (e.g., `'5510'` for Production).
 
+   Always pass an `element` filter (payloads without one can be huge) and an explicit comma-separated `year` list (`'2014,2015,...,2023'`). Colon ranges like `'2014:2023'` have returned empty in practice.
+
 3. Use `response_format='compact'` for multi-entity queries.
 
 4. Use `faostat_get_rankings` (with DISPLAY element codes) to find top producers, importers, or exporters for context and rankings.
+
+   **`faostat_get_rankings` reliability.** The tool sometimes returns HTTP 500. If it fails, reconstruct rankings by pulling `faostat_get_data` across all reporting countries for the target element/year and sorting client-side. Note the fallback in the story's methodology / footnote.
+
+5. **China composite rule.** If the story involves China, default to composite `China` (area code 351) — the roll-up of mainland + Hong Kong SAR + Macao SAR + Taiwan — not `China, mainland` (41). Note the choice in the body text when China features prominently, and add the caveat that FAOSTAT's own publications default to 41, so this story's "China" number is marginally larger than the FAO data-portal default.
 
 Pull data across multiple domains to build a multi-dimensional picture. A good data story typically draws from at least 2-3 different domains.
 
