@@ -75,10 +75,11 @@ faostat_get_rankings(
 **If `faostat_get_rankings` returns an HTTP 500 or other error** (this happens — the endpoint is intermittently unreliable), fall back to pulling all countries via `faostat_get_data` and sorting client-side:
 
 ```
+# Resolve element at runtime: faostat_search_codes(domain_code='QCL', dimension_id='element', query='production') → e.g. 2510
 faostat_get_data(
   domain_code='QCL',
   item='<item_code>',
-  element='2510',           # FILTER code for Production
+  element='<resolved_production_code>',
   year='<recent_year>',
   response_format='compact',
   limit=300,                # cover all reporter countries
@@ -92,6 +93,8 @@ Then sort the returned rows by value descending and take the top 10. Exclude reg
 
 **Important code-system note:** `faostat_get_rankings` uses DISPLAY element codes (Production = `5510`). `faostat_get_data` uses FILTER element codes (Production = `2510`, Area harvested = `2312`, Yield = `2413`). These are different code systems — don't mix them.
 
+> Element codes above are verified hints. Resolve at runtime via `faostat_search_codes` before use.
+
 ### Step 4: Pull annual yield, production, and area series for the top 5
 
 For each of the top 5 producers from Step 3, pull a full 10-year annual series rather than just endpoints. This is worth the extra rows because year-to-year volatility (droughts, disease outbreaks, policy shocks) is part of the story and a 2-point comparison can hide it.
@@ -99,19 +102,24 @@ For each of the top 5 producers from Step 3, pull a full 10-year annual series r
 Three calls, each for the top-5 area codes as a comma-separated list:
 
 ```
+# Resolve elements at runtime:
+# faostat_search_codes(domain_code='QCL', dimension_id='element', query='production') → e.g. 2510
+# faostat_search_codes(domain_code='QCL', dimension_id='element', query='area harvested') → e.g. 2312
+# faostat_search_codes(domain_code='QCL', dimension_id='element', query='yield') → e.g. 2413
+
 # Production
 faostat_get_data(domain_code='QCL', area='<top5_area_codes>', item='<item_code>',
-                 element='2510', year='2014:2023', response_format='compact',
+                 element='<resolved_production_code>', year='2014:2023', response_format='compact',
                  limit=100, show_unit=True)
 
 # Area harvested
 faostat_get_data(domain_code='QCL', area='<top5_area_codes>', item='<item_code>',
-                 element='2312', year='2014:2023', response_format='compact',
+                 element='<resolved_area_harvested_code>', year='2014:2023', response_format='compact',
                  limit=100, show_unit=True)
 
 # Yield
 faostat_get_data(domain_code='QCL', area='<top5_area_codes>', item='<item_code>',
-                 element='2413', year='2014:2023', response_format='compact',
+                 element='<resolved_yield_code>', year='2014:2023', response_format='compact',
                  limit=100, show_unit=True)
 ```
 
@@ -122,15 +130,19 @@ Update the year window if you used a different reference year in Step 3 (aim for
 **Use the `TCL` domain** (Trade — Crops and Livestock Products) for aggregate country-level import and export totals. TCL gives you each country's total exports and total imports of the commodity as single rows — which is what you need for a top-exporters and top-importers table.
 
 ```
-# Top exporters by value (or switch to quantity element 5910)
+# Resolve elements at runtime:
+# faostat_search_codes(domain_code='TCL', dimension_id='element', query='export value') → e.g. 5922
+# faostat_search_codes(domain_code='TCL', dimension_id='element', query='import value') → e.g. 5622
+
+# Top exporters by value (or switch to quantity element resolved via faostat_search_codes)
 faostat_get_data(domain_code='TCL', item='<item_code>',
-                 element='5922',      # Export Value (USD 1000)
+                 element='<resolved_export_value_code>',
                  year='<recent_year>', response_format='compact',
                  limit=200, show_unit=True)
 
 # Top importers
 faostat_get_data(domain_code='TCL', item='<item_code>',
-                 element='5622',      # Import Value (USD 1000)
+                 element='<resolved_import_value_code>',
                  year='<recent_year>', response_format='compact',
                  limit=200, show_unit=True)
 ```
@@ -148,8 +160,9 @@ Based on the classification from Step 2, pull one additional dataset:
 **Food staple — Consumption & Food Security:** pull Food Balance Sheet data via the `FBS` domain. Look for food supply (kg/capita/yr), calories (kcal/capita/day), and protein (g/capita/day) at the world level plus the top 5 producer/consumer countries.
 
 ```
+# Resolve element at runtime: faostat_search_codes(domain_code='FBS', dimension_id='element', query='food supply') → e.g. 645 / 664 / 674
 faostat_get_data(domain_code='FBS', item='<fbs_item_code>',
-                 element='<645 or 664 or 674>', year='<recent_year>',
+                 element='<resolved_food_supply_code>', year='<recent_year>',
                  response_format='compact', limit=50, show_unit=True)
 ```
 
@@ -158,8 +171,9 @@ You'll need to resolve the FBS item code separately via `faostat_search_codes(do
 **Cash crop — Price Dynamics:** pull producer-price series via the `PP` domain for the top 5 producers over the last 5 years. Report year-over-year changes and note any recent shocks.
 
 ```
+# Resolve element at runtime: faostat_search_codes(domain_code='PP', dimension_id='element', query='producer price') → e.g. 5532
 faostat_get_data(domain_code='PP', area='<top5_area_codes>', item='<item_code>',
-                 element='5532',           # Producer Price, USD/tonne
+                 element='<resolved_producer_price_code>',
                  year='<5yr_range>', response_format='compact',
                  limit=100, show_unit=True)
 ```
@@ -216,6 +230,10 @@ End the briefing with a methodology footer and source line:
 ```
 
 Do not omit the source line — it's how users verify figures and know when the data was pulled.
+
+## Important Rules
+
+**Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 ## Error handling and reliability notes
 

@@ -24,6 +24,8 @@ Before starting, verify that the FAOSTAT MCP tools are available: `faostat_searc
 
 ## Element Code Reference (CRITICAL)
 
+> Element codes below are verified hints. Resolve at runtime via `faostat_search_codes` before use.
+
 - **Production quantity (QCL)**: filter code `2510`, display code `5510`
 - **Import quantity (TCL)**: filter code `2610`
 - **Export quantity (TCL)**: filter code `2910`
@@ -68,11 +70,12 @@ If the user provides both in their initial message, proceed directly. If either 
 
 Query the QCL domain for the country's domestic production of this commodity:
 ```
+# Resolve element at runtime: faostat_search_codes(domain_code='QCL', dimension_id='element', query='production') → e.g. 2510
 faostat_get_data(
   domain_code='QCL',
   area='<area_code>',
   item='<item_code_qcl>',
-  element='2510',
+  element='<resolved_production_code>',
   year='2014,2015,2016,2017,2018,2019,2020,2021,2022,2023',
   response_format='compact'
 )
@@ -85,17 +88,20 @@ Extract production quantities for the most recent 10-15 years to establish a tre
 
 Pull import and export quantities for this country-commodity pair from **TCL** (country-level aggregates):
 ```
+# Resolve elements at runtime:
+# faostat_search_codes(domain_code='TCL', dimension_id='element', query='import quantity') → e.g. 2610
+# faostat_search_codes(domain_code='TCL', dimension_id='element', query='export quantity') → e.g. 2910
 faostat_get_data(
   domain_code='TCL',
   area='<area_code>',
   item='<item_code_tcl>',
-  element='2610,2910',              # 2610 Import qty, 2910 Export qty
+  element='<resolved_import_qty_code>,<resolved_export_qty_code>',
   year='2014,2015,...,2023',
   response_format='compact'
 )
 ```
 
-For USD trade values, add `2612` (Import value) and `2912` (Export value).
+For USD trade values, also resolve `import value` and `export value` elements via `faostat_search_codes` (hints: `2612` and `2912`).
 
 Extract, per year:
 - **Total import quantity** (tonnes)
@@ -127,17 +133,19 @@ Calculate SSR for the latest year and for 5 and 10 years ago (if data available)
 
 Now — and only now — pull the partner breakdown from TM:
 ```
+# Resolve elements at runtime: faostat_search_codes(domain_code='TM', dimension_id='element', query='import') → e.g. 5622
+# and faostat_search_codes(domain_code='TM', dimension_id='element', query='export') → e.g. 5922
 faostat_get_data(
   domain_code='TM',
   area='<area_code>',
   item='<item_code_tm>',
-  element='5622,5922',              # Import qty, Export qty in TM element codes
+  element='<resolved_tm_import_code>,<resolved_tm_export_code>',
   year='<latest available year>',
   response_format='compact',
   limit=500
 )
 ```
-Note: TM uses different element codes than TCL. If unsure, `faostat_search_codes(domain_code='TM', dimension_id='element', query='import')` will surface the right pair.
+Note: TM uses different element codes than TCL. Always resolve via `faostat_search_codes(domain_code='TM', dimension_id='element', query='import')` — do not assume TM codes match TCL codes.
 
 From the partner data, rank import partners by volume:
 1. List the top 5 import source countries with their share of total imports (use the TCL total from Step 4 as the denominator — TM partner totals sometimes don't perfectly reconcile).
@@ -188,6 +196,8 @@ Structure the output as follows:
 "Source: FAOSTAT (FAO), accessed [current date]"
 
 ## Important Rules
+
+**Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 - Always use `faostat_search_codes` before `faostat_get_data` to resolve codes. Never guess or hardcode domain-specific codes.
 - When `requires_confirmation` is true in a search result, always present options to the user and wait for their choice.

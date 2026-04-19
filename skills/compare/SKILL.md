@@ -34,6 +34,9 @@ Determine from the user's message (or ask if unclear):
    - Agrifood emissions: **GT**; temperature change: **ET**; land use: **RL**
 
 Map the metric to the correct FAOSTAT element FILTER codes:
+
+> Element codes below are verified hints. Resolve at runtime via `faostat_search_codes` before use.
+
 - Production (QCL): `'2510'`
 - Yield (QCL): `'2413'`
 - Area harvested (QCL): `'2312'`
@@ -60,7 +63,7 @@ For each entity combination, call `faostat_get_data` with:
 - `domain_code='<domain>'`
 - `area='<area_code>'` (or comma-separated codes if comparing multiple countries for one item)
 - `item='<item_code>'` (or comma-separated codes if comparing multiple items)
-- `element='<element_filter_code>'`
+- `element='<element_filter_code>'` — resolve first: `faostat_search_codes(domain_code='<domain>', dimension_id='element', query='<metric name>')` → use the returned FILTER code; reference hints in Step 1 to validate
 - `year='2014,2015,2016,2017,2018,2019,2020,2021,2022,2023'` — use an **explicit comma-separated year list**. Colon ranges like `'2014:2023'` have returned empty in practice; avoid them.
 - `response_format='compact'` (saves tokens for multi-entity queries)
 - `limit=200` (increase limit for multi-year, multi-entity queries)
@@ -102,6 +105,10 @@ Structure the output as follows:
 End with:
 
 > Source: FAOSTAT (FAO), accessed [current date].
+
+## Important Rules
+
+**Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 ## Error Handling
 

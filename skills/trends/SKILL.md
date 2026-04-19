@@ -30,7 +30,7 @@ Use `faostat_search_codes` with `domain_code='QCL'` and `dimension_id='area'` to
 
 ### Step 3 — Pull Production Data for Major Commodity Groups
 
-Query the **QCL** (Crops and Livestock Products) domain using `faostat_get_data`. Pull production quantity data (element FILTER code `'2510'`) across major commodity groups.
+Query the **QCL** (Crops and Livestock Products) domain using `faostat_get_data`. Pull production quantity data (element FILTER code resolved at runtime via `faostat_search_codes(domain_code='QCL', dimension_id='element', query='production')` → e.g. `'2510'`) across major commodity groups.
 
 For broad monitoring, query across these key items:
 - Cereals (wheat, rice, maize, barley, sorghum, millet)
@@ -45,9 +45,11 @@ Use `faostat_search_codes` with `domain_code='QCL'` and `dimension_id='item'` to
 For each query, use `response_format='compact'` when pulling data for multiple entities to keep payloads efficient. Set `limit` appropriately to cover the full time window. Use explicit comma-separated year lists (e.g., `year='2019,2020,2021,2022,2023'`) — colon ranges like `'2019:2023'` have returned empty in practice.
 
 **CRITICAL — FILTER vs DISPLAY.** Element codes come in two flavors:
-- `faostat_get_data(..., element='2510')` uses the **FILTER** code for Production quantity.
-- `faostat_get_rankings(..., element_code='5510')` uses the **DISPLAY** code for Production quantity.
-Do not invert these. If in doubt, `faostat_search_codes(domain_code='QCL', dimension_id='element', query='production')` returns both codes for every element.
+- `faostat_get_data(..., element='<resolved_filter_code>')` uses the **FILTER** code for Production quantity (hint: `2510`).
+- `faostat_get_rankings(..., element_code='<resolved_display_code>')` uses the **DISPLAY** code for Production quantity (hint: `5510`).
+Do not invert these. Always resolve first: `faostat_search_codes(domain_code='QCL', dimension_id='element', query='production')` returns both codes for every element.
+
+> Element codes above are verified hints. Resolve at runtime via `faostat_search_codes` before use.
 
 **China composite rule (user preference, Apr 2026).** When building a regional aggregate or top-N ranking that includes China, default to composite `China` (area code 351) — the roll-up of mainland + HK SAR + Macao SAR + Taiwan. Do NOT substitute `China, mainland` (41) unless the user specifies 41 explicitly. Flag the choice in the output and note that FAOSTAT's own publications default to 41, so the numbers here are marginally larger than the FAO data-portal default.
 
@@ -117,6 +119,10 @@ Suggest to the user:
 - "Would you like me to visualize any of these trends as charts?" (invokes the visualization skill)
 - "Want a deeper dive into any specific commodity or country?" (invokes the commodity or country-profile skill)
 - "Should I check the trade data for any of the anomalies?" (invokes the trade skill)
+
+## Important Rules
+
+**Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 ## Error Handling and Reliability Notes
 

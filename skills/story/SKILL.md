@@ -11,6 +11,10 @@ Build data-driven narratives for journalists, researchers, and communicators usi
 
 Before starting, confirm the FAOSTAT MCP tools are available by checking that tools `faostat_get_data`, `faostat_search_codes`, `faostat_list_groups`, `faostat_list_domains`, and `faostat_get_rankings` are accessible. If they are not, inform the user that this skill requires the FAOSTAT MCP server to be connected and stop.
 
+## Important Rules
+
+**Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
+
 ## Workflow
 
 ### Step 1 — Understand the Story Angle
@@ -56,7 +60,7 @@ For each entity referenced in the story:
 
 2. Pull data using `faostat_get_data` with the resolved codes.
 
-   **Important:** Element FILTER codes differ from DISPLAY codes. When calling `faostat_get_data`, use the filter code for the `element` parameter (e.g., filter `'2510'` for Production). When calling `faostat_get_rankings`, use the DISPLAY code (e.g., `'5510'` for Production).
+   **Important:** Element FILTER codes differ from DISPLAY codes. When calling `faostat_get_data`, use the filter code for the `element` parameter — always resolve it at runtime first: `faostat_search_codes(domain_code='QCL', dimension_id='element', query='production quantity')` → e.g. 2510. When calling `faostat_get_rankings`, use the DISPLAY code (e.g., `'5510'` for Production). Never pass a hardcoded numeric code without first verifying it via `faostat_search_codes`.
 
    Always pass an `element` filter (payloads without one can be huge) and an explicit comma-separated `year` list (`'2014,2015,...,2023'`). Colon ranges like `'2014:2023'` have returned empty in practice.
 

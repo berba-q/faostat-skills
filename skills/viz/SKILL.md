@@ -158,6 +158,7 @@ This ensures the insight is captured even if the user cannot view the chart imme
 - Use the colorblind-friendly palette defined above. Do not use default Chart.js colors.
 - The HTML file must be fully standalone -- no external dependencies except the Chart.js CDN.
 - Always include the source attribution line at the end of any text output as well.
+- **Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 ## Related Skills
 

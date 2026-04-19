@@ -29,6 +29,8 @@ If any tool is missing, inform the user: "This skill requires the FAOSTAT MCP se
 
 ## Element Code Reference
 
+> Element codes below are verified hints. Resolve at runtime via `faostat_search_codes` before use.
+
 - **Production quantity (QCL)**: filter `2510`, display `5510`
 - **Import quantity (TCL)**: filter `2610`; **Export quantity (TCL)**: filter `2910`
 - **Import value (TCL, USD 1000)**: filter `2612`; **Export value (TCL, USD 1000)**: filter `2912`
@@ -61,7 +63,7 @@ Store the confirmed `area` code for all subsequent queries.
 Call `faostat_get_data` with:
 - `domain_code='QCL'`
 - `area='<resolved_area_code>'`
-- `element='2510'` (Production — this is the FILTER code)
+- `element='<resolved_production_code>'` — resolve at runtime: `faostat_search_codes(domain_code='QCL', dimension_id='element', query='production quantity')` → e.g. `2510` (Production — this is the FILTER code)
 - `year='<most_recent_year>'` (try the current year minus 2; if no data, try minus 3)
 - `response_format='compact'`
 - `limit=20`
@@ -74,7 +76,7 @@ Sort the results by value descending and identify the **top 5 crops by productio
 Call `faostat_get_data` with specific element filters so the payload stays small:
 - `domain_code='FS'`
 - `area='<resolved_area_code>'`
-- `element='210041,210011'` (prevalence of undernourishment, number undernourished). Add other FS element codes if needed — resolve via `faostat_search_codes(domain_code='FS', dimension_id='element', query='...')`.
+- `element='<resolved_fs_codes>'` — resolve at runtime: `faostat_search_codes(domain_code='FS', dimension_id='element', query='undernourishment')` → e.g. `210041,210011` (prevalence of undernourishment, number undernourished). Add other FS element codes if needed — resolve via `faostat_search_codes(domain_code='FS', dimension_id='element', query='...')`.
 - `year='2014,2015,2016,2017,2018,2019,2020,2021,2022,2023'` (use explicit comma list — colon ranges like `'2014:2023'` have returned empty in practice)
 - `response_format='compact'`
 
@@ -91,7 +93,7 @@ If data is sparse, note which indicators are unavailable.
 Call `faostat_get_data` with:
 - `domain_code='FBS'`
 - `area='<resolved_area_code>'`
-- `element='664,674,684,645'` (kcal/cap/day, protein g/cap/day, fat g/cap/day, food kg/cap/yr)
+- `element='<resolved_fbs_codes>'` — resolve at runtime: `faostat_search_codes(domain_code='FBS', dimension_id='element', query='food supply kcal')` and similar queries for protein/fat → e.g. `664,674,684,645` (kcal/cap/day, protein g/cap/day, fat g/cap/day, food kg/cap/yr)
 - `year='<latest 2-3 years available — FBS typically lags QCL by 1 year>'`
 - `item='2901'` (Grand Total for headline metrics); for item-specific breakdown (e.g., wheat contribution) resolve via `faostat_search_codes`
 - `response_format='compact'`
@@ -106,11 +108,16 @@ Extract:
 ### Step 6: Pull Trade Summary (TCL, not TM)
 
 Use **TCL** (country-level aggregate trade) for total imports and exports:
-```
+```python
+# Resolve elements at runtime:
+# faostat_search_codes(domain_code='TCL', dimension_id='element', query='import quantity') → e.g. 2610
+# faostat_search_codes(domain_code='TCL', dimension_id='element', query='export quantity') → e.g. 2910
+# faostat_search_codes(domain_code='TCL', dimension_id='element', query='import value') → e.g. 2612
+# faostat_search_codes(domain_code='TCL', dimension_id='element', query='export value') → e.g. 2912
 faostat_get_data(
   domain_code='TCL',
   area='<resolved_area_code>',
-  element='2610,2910,2612,2912',    # import qty, export qty, import value, export value
+  element='<resolved_import_qty>,<resolved_export_qty>,<resolved_import_val>,<resolved_export_val>',
   year='<latest 3 years>',
   response_format='compact',
   limit=500
@@ -148,6 +155,10 @@ Include trend indicators where multi-year data is available:
 End the report with:
 
 > Source: FAOSTAT (FAO), accessed [current date]. Data may reflect reporting lags of 1-3 years.
+
+## Important Rules
+
+**Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 ## Error Handling
 

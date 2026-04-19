@@ -1,6 +1,6 @@
 ---
 name: faostat-export-dataset
-description: Use when the user wants a clean, documented tabular export of FAOSTAT data — "export FAOSTAT", "download the data", "give me the CSV / xlsx of [indicator]", "I want the raw numbers", "tabular data pull", "export to spreadsheet". The deliverable is a bundle: one multi-sheet .xlsx (README / Data_tidy / Data_wide / Methodology / Sources) + one tidy-long .csv mirror + a data-dictionary .md. No prose, no charts, no narrative — just the data with full provenance. Do NOT use for reports, briefs, papers, infographics, or visualisations — those skills embed their own xlsx appendices. Use this skill when the data itself IS the deliverable.
+description: Use when the user wants a clean, documented tabular export of FAOSTAT data — "export FAOSTAT", "download the data", "give me the CSV / xlsx of [indicator]", "I want the raw numbers", "tabular data pull", "export to spreadsheet". The deliverable is a bundle — one multi-sheet .xlsx (README / Data_tidy / Data_wide / Methodology / Sources) + one tidy-long .csv mirror + a data-dictionary .md. No prose, no charts, no narrative — just the data with full provenance. Do NOT use for reports, briefs, papers, infographics, or visualisations — those skills embed their own xlsx appendices. Use this skill when the data itself IS the deliverable.
 ---
 
 # FAOSTAT Data Export
@@ -24,12 +24,14 @@ Cross-skill invariants (all six — violations are skill bugs):
 5. **China composite default (Apr 2026 user preference).** Default: composite `China` (area 351). `China, mainland` (41) is an opt-in; full disaggregation (41 + 96 + 128 + 214) is also opt-in. Record the choice in the README sheet with the FAOSTAT-default-41 caveat.
 6. **`faostat_get_rankings` HTTP-500 fallback.** On failure, reconstruct by pulling `faostat_get_data` across all reporting countries and sorting client-side. Note the fallback in Methodology.
 
+7. **Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
+
 Export-specific invariants:
 
-7. **Every value traces to an API call.** The Methodology sheet logs one row per `faostat_get_data` call with domain / area / element / item / year list / timestamp / rows-returned. No value appears in the export that did not come from a documented call.
-8. **FAO-native units kept as-is.** No auto-conversion. Values stay in FAOSTAT's native units (kt CO₂eq, tonnes, USD 1000, etc.). Unit is a column in tidy-long and a header row in wide. If the user explicitly asks for normalised units, add normalised columns **alongside** the native ones — never in place of.
-9. **No FAO branding.** No FAO logo, "Food and Agriculture Organization of the United Nations" masthead, ISSN, "FAO Statistics Division" stamp, or "Required citation: FAO. …" line. CC-BY-4.0 attribution to FAOSTAT (source, licence, access date) IS kept — that's a property of the source data.
-10. **Both shapes in the xlsx.** `Data_tidy` (long) and `Data_wide` (years-as-columns pivot) are both always present. The CSV mirror is tidy-long only. A wide CSV is produced only if the user asks.
+8. **Every value traces to an API call.** The Methodology sheet logs one row per `faostat_get_data` call with domain / area / element / item / year list / timestamp / rows-returned. No value appears in the export that did not come from a documented call.
+9. **FAO-native units kept as-is.** No auto-conversion. Values stay in FAOSTAT's native units (kt CO₂eq, tonnes, USD 1000, etc.). Unit is a column in tidy-long and a header row in wide. If the user explicitly asks for normalised units, add normalised columns **alongside** the native ones — never in place of.
+10. **No FAO branding.** No FAO logo, "Food and Agriculture Organization of the United Nations" masthead, ISSN, "FAO Statistics Division" stamp, or "Required citation: FAO. …" line. CC-BY-4.0 attribution to FAOSTAT (source, licence, access date) IS kept — that's a property of the source data.
+11. **Both shapes in the xlsx.** `Data_tidy` (long) and `Data_wide` (years-as-columns pivot) are both always present. The CSV mirror is tidy-long only. A wide CSV is produced only if the user asks.
 
 ## Workflow
 
@@ -38,7 +40,7 @@ Export-specific invariants:
 Required from the user (prompt via `AskUserQuestion` in Cowork, inline otherwise):
 
 - **Domain** — e.g., GT, QCL, TCL, ET, PP, FBS, FS.
-- **Element(s)** — FILTER code(s).
+- **Element(s)** — FILTER code(s). If the user supplies a name rather than a code, resolve via `faostat_search_codes` (invariant 7) before use.
 - **Year range** — list of years (will be passed comma-separated).
 - **Area scope** — World, specific regions, specific country list, or "all reporting countries". Default if unspecified: all reporting countries plus regional aggregates (5000/5100/5200/5300/5400/5500).
 
@@ -51,7 +53,7 @@ Optional:
 
 ### Step 2 — Resolve codes
 
-If the user gave names rather than codes, call `faostat_search_codes(domain_code=…, dimension_id='item'|'area', query=…)`. Print the resolved codes back in a short confirmation block before the heavy pull so mismatches surface early.
+Always resolve element and item codes at runtime before the data pull (invariant 7). Call `faostat_search_codes(domain_code=…, dimension_id='element'|'item'|'area', query=…)` for every numeric code needed — even when the user supplies a code directly, verify it matches. Print the resolved codes back in a short confirmation block before the heavy pull so mismatches surface early.
 
 ### Step 3 — Pull data
 

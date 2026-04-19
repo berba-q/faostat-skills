@@ -28,13 +28,13 @@ Before starting, verify that the FAOSTAT MCP tools are available: `faostat_searc
 
 ## Element Filter Reference
 
-Every `faostat_get_data` call below specifies an `element` filter. Without one, emissions domains return dozens of sub-elements per year and the payload explodes. If an element code is unfamiliar, resolve via `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='...')`.
+Every `faostat_get_data` call below specifies an `element` filter. Without one, emissions domains return dozens of sub-elements per year and the payload explodes.
+
+**Rule:** For GT, GF, ET, RL, RFN, RP — the codes below are stable and may be used directly. For **EM domain elements, always resolve at runtime** via `faostat_search_codes(domain_code='EM', dimension_id='element', query='<metric>')` — never hardcode them. The verified codes shown are reference hints only.
 
 | Metric | Domain | Filter code |
 |--------|--------|-------------|
 | Emissions (CO2eq) | GT | `724313` |
-| Share in total emissions (%) | EM | `7231` |
-| Emissions per capita (kg CO2eq/person) | EM | `723112` |
 | Temperature change (°C) | ET | `7271` |
 | Net forest conversion (area, ha) | GF | `6646` |
 | Forest land emissions (CO2eq) | GF | `724313` |
@@ -42,6 +42,23 @@ Every `faostat_get_data` call below specifies an `element` filter. Without one, 
 | Forest land (area, ha) | RL | `5110` (item 6646 Forest land) |
 | N fertilizer use (tonnes) | RFN | `5157` |
 | Pesticide use (tonnes) | RP | `5157` |
+
+**EM domain — resolve at runtime (hints only):**
+
+| Metric | Element query | Verified code |
+|--------|--------------|---------------|
+| Emissions per capita | `query='per capita'` | `7279` |
+| Share of agrifood in national total (CO2eq AR5) | `query='share CO2eq'` | `726313` |
+| Emissions per value of agricultural production | `query='per value'` | `72791` |
+
+**EM domain item codes (for filtering the agrifood breakdown):**
+
+| Item | Code |
+|------|------|
+| Agrifood systems (broadest total) | `6518` |
+| Farm gate | `6996` |
+| Land-use change | `6516` |
+| Pre- and post-production | `6517` |
 
 Year-range syntax: use explicit comma-separated lists (`year='2014,2015,...,2023'`). Colon ranges (`'2014:2023'`) have returned empty in practice.
 
@@ -74,12 +91,18 @@ If the question does not clearly match one sub-workflow, present the five option
    )
    ```
    Identify total agrifood emissions trend and the breakdown by source category (farm gate, land use, pre/post production — these come through as different `item` codes within GT).
-4. Pull emissions indicators from the **EM** domain:
+4. Resolve EM element codes at runtime (do not hardcode):
+   ```
+   faostat_search_codes(domain_code='EM', dimension_id='element', query='per capita')
+   faostat_search_codes(domain_code='EM', dimension_id='element', query='share CO2eq')
+   ```
+   Use the returned codes (e.g. `7279` for per capita, `726313` for share) in the data call:
    ```
    faostat_get_data(
      domain_code='EM',
      area='<area_code>',
-     element='7231,723112',                # Share in total (%), per capita (kg CO2eq)
+     item='6518',                          # Agrifood systems total
+     element='<per_capita_code>,<share_code>',
      year='2019,2020,2021,2022,2023',
      response_format='compact'
    )
@@ -119,12 +142,17 @@ If the question does not clearly match one sub-workflow, present the five option
      response_format='compact'
    )
    ```
-4. Pull emissions indicators from the **EM** domain for all entities:
+4. Resolve EM element codes at runtime, then pull indicators for all entities:
+   ```
+   faostat_search_codes(domain_code='EM', dimension_id='element', query='per capita')
+   faostat_search_codes(domain_code='EM', dimension_id='element', query='share CO2eq')
+   ```
    ```
    faostat_get_data(
      domain_code='EM',
      area='<code1>,<code2>,...',
-     element='7231,723112',
+     item='6518',                          # Agrifood systems total
+     element='<per_capita_code>,<share_code>',
      year='2019,2020,2021,2022,2023',
      response_format='compact'
    )
@@ -213,6 +241,7 @@ If the question does not clearly match one sub-workflow, present the five option
 - **Always pass an `element` filter to `faostat_get_data`.** Emissions domains return dozens of sub-elements per year and the payload explodes without one.
 - **Always pass an explicit comma-separated `year` list.** Colon ranges like `'2014:2023'` have returned empty in practice.
 - Always include the source attribution line at the end of any output.
+- **Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 ## Error Handling and Reliability Notes
 

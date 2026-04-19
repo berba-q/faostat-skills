@@ -1,6 +1,6 @@
 ---
 name: faostat-infographic
-description: Use when the user wants a modern, non-expert-facing visual summary of FAOSTAT data on a single page — an infographic, one-pager, visual summary, explainer card, or shareable graphic for social, pitch decks, or press use. The deliverable is a standalone HTML file with inline SVG (optional PNG/PDF export). Aesthetic: Visual Capitalist / Our World in Data explainer cards / Statista — bold typography, generous whitespace, one hero stat, iconography over chart axes. Do NOT use when the user asks for an "analytical brief", "policy brief", "FAOSTAT brief", "policymaker-facing" document → route to `faostat-analytical-brief`. Do NOT use for "data story", "article", "long-read", "explainer" with paragraphs → route to `faostat-story`. Do NOT use for academic papers or dense chart-per-finding reports. Do NOT use when the user wants a standalone interactive chart only → use `faostat-viz`.
+description: Use when the user wants a modern, non-expert-facing visual summary of FAOSTAT data on a single page — an infographic, one-pager, visual summary, explainer card, or shareable graphic for social, pitch decks, or press use. The deliverable is a standalone HTML file with inline SVG (optional PNG/PDF export). Aesthetic — Visual Capitalist / Our World in Data explainer cards / Statista — bold typography, generous whitespace, one hero stat, iconography over chart axes. Do NOT use when the user asks for an analytical brief, policy brief, FAOSTAT brief, or policymaker-facing document → route to `faostat-analytical-brief`. Do NOT use for a data story, article, long-read, or explainer with paragraphs → route to `faostat-story`. Do NOT use for academic papers or dense chart-per-finding reports. Do NOT use when the user wants a standalone interactive chart only → use `faostat-viz`.
 ---
 
 # FAOSTAT Infographic
@@ -21,14 +21,15 @@ Cross-skill invariants (all six — violations are skill bugs):
 4. **TCL for national trade aggregates, TM only for partner breakdowns.** Never sum TM rows to reconstruct national totals.
 5. **China composite default (Apr 2026 user preference).** For any country-level number or ranking, default to composite `China` (area 351). Offer `China, mainland` (41) as an opt-in. Flag the choice in the source footer. Map carve-out: if the main visual is a choropleth, the map uses the disaggregation path (area 41 on the CHN polygon; HKG 96 / MAC 128 / TWN 214 on their own polygons). Never blend the two in the same figure.
 6. **`faostat_get_rankings` HTTP-500 fallback.** If the call fails, reconstruct by pulling `faostat_get_data` across all reporting countries and sorting client-side. Note the fallback in the source footer.
+7. **Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 Infographic-specific invariants:
 
-7. **One hero stat.** There is exactly one hero number on the page. If you're torn between two, pick the more surprising one and push the other into the supporting-stats row.
-8. **One main visual.** Exactly one chart, map, or diagram. Rankings and compositions that would otherwise become a second chart render as a plain bulleted list or a small numeric table with no bar-width indicators. See Step 3 for the decision tree.
-9. **Jargon only in the source footer.** `AR5`, `AR5 GWP-100`, `CAGR`, `n.e.c.`, `FILTER code`, `DISPLAY code`, `LULUCF`, bare `CO2eq`, `kt`/`Mt`/`Gt` on first reference, and numeric FAOSTAT element/item codes stay in the source footer. Not in visual titles, subtitles, chart labels, captions, or headlines.
-10. **Ten-second test.** Read the page aloud in 10 seconds — can a non-expert recite the main point? If not, shrink the headline or enlarge the hero.
-11. **No FAO branding.** Retain CC-BY-4.0 data attribution ("Data: FAOSTAT (FAO), CC-BY-4.0"), but do not reproduce the FAO logo, "Food and Agriculture Organization of the United Nations" masthead, ISSN, "FAO Statistics Division" stamp, or "Required citation: FAO. …" line. The infographic is the analyst's, not FAO's.
+8. **One hero stat.** There is exactly one hero number on the page. If you're torn between two, pick the more surprising one and push the other into the supporting-stats row.
+9. **One main visual.** Exactly one chart, map, or diagram. Rankings and compositions that would otherwise become a second chart render as a plain bulleted list or a small numeric table with no bar-width indicators. See Step 3 for the decision tree.
+10. **Jargon only in the source footer.** `AR5`, `AR5 GWP-100`, `CAGR`, `n.e.c.`, `FILTER code`, `DISPLAY code`, `LULUCF`, bare `CO2eq`, `kt`/`Mt`/`Gt` on first reference, and numeric FAOSTAT element/item codes stay in the source footer. Not in visual titles, subtitles, chart labels, captions, or headlines.
+11. **Ten-second test.** Read the page aloud in 10 seconds — can a non-expert recite the main point? If not, shrink the headline or enlarge the hero.
+12. **No FAO branding.** Retain CC-BY-4.0 data attribution ("Data: FAOSTAT (FAO), CC-BY-4.0"), but do not reproduce the FAO logo, "Food and Agriculture Organization of the United Nations" masthead, ISSN, "FAO Statistics Division" stamp, or "Required citation: FAO. …" line. The infographic is the analyst's, not FAO's.
 
 ## Visual system
 
@@ -69,6 +70,95 @@ Inline **Lucide** SVG icons (MIT licensed, ≤ 1 kB each). Fetch from `https://c
 
 Common mappings: emissions → `cloud`, production → `wheat`, trade → `ship`, temperature → `thermometer-sun`, price → `trending-up`, yield → `sprout`, livestock → `beef`, water → `droplet`, land → `mountain`.
 
+### Design principles
+
+These principles are extracted from best-in-class data journalism infographics (Visual Capitalist, Column Five, USAID data briefs, OWID explainer cards). Apply them every time:
+
+1. **Narrative arc.** Every infographic tells a complete arc: *scale the problem → show the data → land the implication*. Plan the arc in Step 2 before pulling data. If the data doesn't support the arc, reframe — don't just display numbers.
+2. **Progressive disclosure.** A reader stopping after 5 s gets the hero. One stopping after 15 s gets the supporting stats. One reading fully gets the chart and takeaway. Each layer adds detail without requiring the previous layer to be re-read.
+3. **Data-ink ratio.** Remove every visual element that doesn't carry a data signal. No decorative borders, no 3-D effects, no unnecessary tick marks, no legend if labels on the data suffice.
+4. **Icon as cognitive anchor.** Icons beside supporting stats aren't decoration — they help readers recall the number later. Every supporting stat gets exactly one Lucide icon; the icon carries semantic meaning (not generic icons like `star` or `check`).
+5. **Whitespace as structure.** Margins and padding do the job of dividers. Don't add horizontal rules or coloured bands — generous padding between sections is cleaner.
+6. **Typography does the heavy lifting.** The hero number should be readable from arm's length. If a reader needs to lean in to read the hero, it's too small.
+
+### Animations (HTML only)
+
+Scroll-triggered, zero external dependencies — `IntersectionObserver` + CSS transitions + inline JS. Every animation must respect `prefers-reduced-motion: reduce` via a single early-return guard.
+
+**Hero counter** — the hero number counts from 0 to its final value over 1.2 s (ease-out cubic). Store the numeric portion in `data-value` on `.hero-stat`; keep unit and prefix in separate `<span>` elements so only the digit string animates.
+
+**Supporting-stats cascade** — each `.stat` card starts invisible (`opacity: 0; transform: translateY(16px)`) and transitions in with a 100 ms stagger as the section enters the viewport.
+
+**Bar chart draw** — each bar `<rect>` starts at `width="0"` (or `height="0"` for horizontal). Set the target dimension via a CSS custom property; transition to it over 0.8 s with 50 ms per-bar stagger.
+
+**Line chart draw** — set `stroke-dasharray` equal to the path's `getTotalLength()` at paint time; start `stroke-dashoffset` at that same value and transition to `0` over `1.4s cubic-bezier(0.25, 1, 0.5, 1)`. Triggered by an `IntersectionObserver` adding `.visible`.
+
+**Hero glow pulse** (Ember palette only) — a repeating `box-shadow` keyframe on the hero stat container. Fades an amber glow in and out over 2 s. Omit on Meadow and Ink — those topics don't warrant urgency drama.
+
+Standard JS boilerplate (inline `<script>` at end of `<body>`):
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('visible');
+      if (e.target.classList.contains('hero-stat')) _counter(e.target);
+      if (e.target.dataset.draw) _drawPath(e.target);
+      io.unobserve(e.target);
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.hero-stat, .stat, [data-draw]').forEach(el => io.observe(el));
+
+  function _counter(el) {
+    const end = parseFloat(el.dataset.value);
+    const decimals = (String(end).split('.')[1] ?? '').length;
+    const t0 = performance.now();
+    (function tick(now) {
+      const p = Math.min((now - t0) / 1200, 1);
+      const v = (end * (1 - Math.pow(1 - p, 3))).toFixed(decimals);
+      el.querySelector('.counter-value').textContent = v;
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+
+  function _drawPath(el) {
+    const len = el.getTotalLength ? el.getTotalLength() : parseFloat(el.dataset.draw);
+    el.style.strokeDasharray = len;
+    el.style.strokeDashoffset = len;
+    el.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(.25,1,.5,1)';
+    requestAnimationFrame(() => { el.style.strokeDashoffset = 0; });
+  }
+});
+```
+
+CSS additions inside `<style>`:
+
+```css
+@media (prefers-reduced-motion: no-preference) {
+  .stat { opacity: 0; transform: translateY(16px);
+          transition: opacity .5s ease, transform .5s ease; }
+  .stat.visible { opacity: 1; transform: none; }
+  .stat:nth-child(2) { transition-delay: .1s; }
+  .stat:nth-child(3) { transition-delay: .2s; }
+  .stat:nth-child(4) { transition-delay: .3s; }
+
+  /* Ember palette hero pulse */
+  body.palette-ember .hero-stat {
+    animation: _glow 2s ease-in-out infinite;
+  }
+  @keyframes _glow {
+    0%, 100% { box-shadow: 0 0 0 transparent; }
+    50%       { box-shadow: 0 0 52px rgba(246,163,63,.30); }
+  }
+}
+```
+
+Add `class="palette-ember"` (or `palette-meadow` / `palette-ink`) to `<body>` to activate the correct palette-scoped animation rules.
+
 ## Workflow
 
 ### Step 1 — Gather parameters
@@ -85,10 +175,10 @@ Proceed without a second clarifying round — one is enough. Pick sensible defau
 ### Step 2 — Design the hero message
 
 From the topic, identify the single most striking stat. Rules of thumb:
-- **Biggest delta over the window** (e.g., "+48.8 % in pre- and post-production emissions since 2001")
-- **Most extreme ratio** (e.g., "4× gap in cattle-meat emissions intensity between Africa and Europe")
-- **Most surprising ranking** (e.g., "top 10 emitters = 55 % of world total")
-- **A number at the edge of intuition** (e.g., "16.5 billion tonnes of CO₂-equivalent")
+- **Biggest delta over the window** (e.g., "+127 % in aquaculture output since 2000", "+48.8 % in pre- and post-production emissions since 2001", "wheat yield in the EU grew 3× faster than Sub-Saharan Africa over 30 years")
+- **Most extreme ratio** (e.g., "4× gap in cattle-meat emissions intensity between Africa and Europe", "top 5 countries account for 72 % of global wheat production")
+- **Most surprising ranking** (e.g., "India overtook the US as the world's top rice exporter in 2021", "top 10 emitters = 55 % of world total")
+- **A number at the edge of intuition** (e.g., "815 million people undernourished — roughly 1 in 10", "16.5 billion tonnes of CO₂-equivalent", "Brazil's soybean exports tripled in 20 years")
 
 This becomes the hero + headline. Draft both before pulling data — if the narrative falls apart on the numbers, rewrite.
 
@@ -110,7 +200,7 @@ If you feel the urge to add a second chart, pick one:
 
 ### Step 4 — Pull the data
 
-Apply invariants 1–6. Log every `faostat_get_data` call if the user asked for the companion CSV.
+Apply invariants 1–7. Log every `faostat_get_data` call if the user asked for the companion CSV.
 
 - Use `response_format='compact'`, `show_unit=True`.
 - Pass the element as a FILTER code.
@@ -119,6 +209,8 @@ Apply invariants 1–6. Log every `faostat_get_data` call if the user asked for 
 - For China in rankings / country-level numbers: composite 351 by default, unless the user opted into 41.
 - For the map path: disaggregate — area 41 + HKG 96 + MAC 128 + TWN 214, drop 351.
 - For top-N: prefer `faostat_get_rankings` (DISPLAY codes); if HTTP 500, fall back to `faostat_get_data` across all reporting countries and sort client-side.
+- **Emissions indicators — always fetch from EM domain, never compute.** Resolve element codes at runtime before calling `faostat_get_data`: `faostat_search_codes(domain_code='EM', dimension_id='element', query='per capita')` for per-capita (verified `7279`); `faostat_search_codes(domain_code='EM', dimension_id='element', query='share CO2eq')` for share of national total (verified `726313`). Also filter by item — `6518` for agrifood systems total, `6996` farm gate, `6516` land-use change, `6517` pre- and post-production. Do NOT divide GT totals by population or otherwise reconstruct these metrics.
+- **Unfamiliar topic or domain:** Call `faostat_list_domains()` to browse all available FAOSTAT domains, identify the right one(s) for the topic, then call `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric>')` and `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item>')` to resolve codes. Do not guess domain codes — the infographic skill works with any FAOSTAT domain, not just emissions.
 
 Pull only what you need for the 1 hero + 2–4 supporting stats + main visual. Do not pull a full dataset "in case" — infographics reward discipline.
 
@@ -138,7 +230,9 @@ Plain-language rules:
 
 ### Step 7 — Assemble the HTML
 
-Single self-contained file. Inline CSS and inline SVG. One external resource allowed: the Google Fonts stylesheet. Structure:
+Single self-contained file. Inline CSS and inline SVG. One external resource allowed: the Google Fonts stylesheet. Include the animation boilerplate from the **Animations** section of the Visual system.
+
+HTML structure template (with animation hooks):
 
 ```html
 <!DOCTYPE html>
@@ -147,32 +241,51 @@ Single self-contained file. Inline CSS and inline SVG. One external resource all
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>[Headline]</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=...">
-  <style>/* palette variables + responsive CSS */</style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500&display=swap">
+  <style>
+    /* 1. Palette CSS variables */
+    /* 2. Base + typography */
+    /* 3. Layout: hero, supporting, visual, takeaway, footer */
+    /* 4. Responsive breakpoints (480 / 768 / 1024 px) */
+    /* 5. Animation CSS block from Visual system Animations section */
+  </style>
 </head>
-<body>
+<body class="palette-[ember|meadow|ink]">
   <main>
     <section class="hero">
-      <div class="hero-stat">16.5 bn t</div>
-      <h1 class="headline">[Headline]</h1>
+      <!-- data-value holds the numeric portion only; unit and prefix in sibling spans -->
+      <div class="hero-stat" data-value="16.5">
+        <span class="counter-value">16.5</span><span class="unit"> bn t CO₂-eq</span>
+      </div>
+      <h1 class="headline">[Headline ≤ 10 words]</h1>
     </section>
     <section class="supporting">
-      <div class="stat"><svg>...</svg><div class="n">+21%</div><div class="cap">since 2001</div></div>
-      <!-- 2–3 more -->
+      <!-- Each .stat starts invisible; IntersectionObserver adds .visible -->
+      <div class="stat">
+        <svg aria-hidden="true"><!-- Lucide icon inline --></svg>
+        <div class="n">+21%</div>
+        <div class="cap">since 2001</div>
+      </div>
+      <!-- 2–3 more .stat cards -->
     </section>
     <section class="visual">
-      <svg role="img" aria-label="[alt text]">...</svg>
+      <!-- Line chart: add data-draw attribute to the <path> element -->
+      <svg role="img" aria-label="[descriptive alt text]">
+        <path data-draw class="chart-line" d="M..." stroke="var(--hero)" fill="none" stroke-width="3"/>
+      </svg>
+      <!-- Bar chart: start each <rect> at width="0"; animate width via JS or CSS -->
     </section>
-    <p class="takeaway"><em>[One-line so-what]</em></p>
+    <p class="takeaway"><em>[One-line so-what, italic]</em></p>
     <footer class="source">Data: FAOSTAT (FAO), accessed [Month YYYY]. Licence: CC-BY-4.0. Domains: [codes]. [China footnote].</footer>
   </main>
+  <script>/* Animation boilerplate from Visual system Animations section */</script>
 </body>
 </html>
 ```
 
-Responsive breakpoints at 480 / 768 / 1024 px. On mobile the hero shrinks, supporting stats stack vertically, and the main visual goes full-width.
+Responsive breakpoints at 480 / 768 / 1024 px. On mobile the hero shrinks to 72–96 px, supporting stats stack vertically, and the main visual goes full-width.
 
-Accessibility: every SVG gets `role="img"` and a meaningful `aria-label`. Colour contrast ≥ 4.5:1 for body text, ≥ 3:1 for large text.
+Accessibility: every SVG gets `role="img"` and a meaningful `aria-label`; decorative icons use `aria-hidden="true"`. Colour contrast ≥ 4.5:1 for body text, ≥ 3:1 for large text. `prefers-reduced-motion` is handled by the animation boilerplate's early-return guard.
 
 ### Step 8 — Offer exports
 
@@ -224,9 +337,9 @@ Offer four specific levers:
 - **Playwright / Chromium unavailable** — fall back to `weasyprint` for PDF; skip PNG and tell the user the sandbox lacks the headless-browser runtime.
 - **Google Fonts CDN blocked** — inline a system font stack as fallback: `-apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif` for body and `Georgia, 'Times New Roman', serif` for hero. Note the fallback.
 - **User asks to add FAO branding (logo, masthead, "Required citation: FAO")** — push back. Explain that the infographic skill drops FAO branding by design so the output isn't mistaken for an FAO publication. The CC-BY-4.0 data attribution in the source footer is sufficient and legally required. Only proceed if the user explicitly overrides.
-- **User asks for multiple hero stats** — push back. Invariant 7: one hero. Offer to turn the second would-be-hero into a supporting stat, or to build a second infographic.
-- **User asks for a second chart (rankings, second time series, composition + map, etc.)** — push back. Invariant 8: one main visual. Offer (a) to promote the new chart to the main visual and demote the current one, (b) to render the ranking/composition as a plain numbered list or a small numeric table with no bar indicators, or (c) to split into two infographics.
-- **Urge to label a chart "AR5 GWP-100", "CO2eq", "kt", etc.** — push back. Invariant 9: jargon belongs only in the source footer. Rewrite the label in plain English and add the methodology clause to the footer.
+- **User asks for multiple hero stats** — push back. Invariant 8: one hero. Offer to turn the second would-be-hero into a supporting stat, or to build a second infographic.
+- **User asks for a second chart (rankings, second time series, composition + map, etc.)** — push back. Invariant 9: one main visual. Offer (a) to promote the new chart to the main visual and demote the current one, (b) to render the ranking/composition as a plain numbered list or a small numeric table with no bar indicators, or (c) to split into two infographics.
+- **Urge to label a chart "AR5 GWP-100", "CO2eq", "kt", etc.** — push back. Invariant 10: jargon belongs only in the source footer. Rewrite the label in plain English and add the methodology clause to the footer.
 
 ## Suggested citation
 

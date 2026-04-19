@@ -24,13 +24,15 @@ Cross-skill invariants (all six — violations are skill bugs):
 5. **China composite default (Apr 2026 user preference).** Country-level numbers and rankings default to composite `China` (area 351). `China, mainland` (41) is available as an opt-in — do not substitute 41 unless the user explicitly asks. Flag the choice in the Methods section with the FAOSTAT-default-41 caveat. Map carve-out: if the paper embeds a choropleth, the map uses disaggregation (41 on CHN polygon + HKG 96 + MAC 128 + TWN 214) while narrative rankings and tables use 351.
 6. **`faostat_get_rankings` HTTP-500 fallback.** On failure, reconstruct by pulling `faostat_get_data` across all reporting countries and sorting client-side. Note the fallback in Methods.
 
+7. **Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
+
 Paper-specific invariants:
 
-7. **Every number traces to the xlsx.** Results-section numbers and every numeric claim in the Abstract, Discussion, and Conclusion live in a row of the data appendix (with `source_sheet` + `source_row` columns in a `Claims` sheet). Unverifiable numbers are a bug.
-8. **Hedged claims.** No unqualified causal language unless the method is causal (DiD, IV, RCT). Use "associated with", "correlated with", "consistent with", "suggests". Reserve "causes" / "drives" / "due to" for causal designs only.
-9. **Complete Limitations subsection.** Every paper names at least three limitations: (a) FAOSTAT data-quality caveats (estimated or imputed values, revisions), (b) coverage or temporal gaps, (c) methodological boundaries (descriptive vs causal, unit conversions, aggregation choices). This is non-optional.
-10. **Structured abstract.** Fixed order: Background / Methods / Results / Conclusions. 200–300 words total, four labelled paragraphs or inline labelled sentences.
-11. **No FAO impersonation.** Do not reproduce the FAO logo, "Food and Agriculture Organization of the United Nations" masthead, ISSN, "FAO Statistics Division" stamp, or "Required citation: FAO. …" line. Use a neutral "Suggested citation: [Author] ([YYYY])" block. CC-BY-4.0 data attribution to FAOSTAT stays — it's a property of the source data.
+8. **Every number traces to the xlsx.** Results-section numbers and every numeric claim in the Abstract, Discussion, and Conclusion live in a row of the data appendix (with `source_sheet` + `source_row` columns in a `Claims` sheet). Unverifiable numbers are a bug.
+9. **Hedged claims.** No unqualified causal language unless the method is causal (DiD, IV, RCT). Use "associated with", "correlated with", "consistent with", "suggests". Reserve "causes" / "drives" / "due to" for causal designs only.
+10. **Complete Limitations subsection.** Every paper names at least three limitations: (a) FAOSTAT data-quality caveats (estimated or imputed values, revisions), (b) coverage or temporal gaps, (c) methodological boundaries (descriptive vs causal, unit conversions, aggregation choices). This is non-optional.
+11. **Structured abstract.** Fixed order: Background / Methods / Results / Conclusions. 200–300 words total, four labelled paragraphs or inline labelled sentences.
+12. **No FAO impersonation.** Do not reproduce the FAO logo, "Food and Agriculture Organization of the United Nations" masthead, ISSN, "FAO Statistics Division" stamp, or "Required citation: FAO. …" line. Use a neutral "Suggested citation: [Author] ([YYYY])" block. CC-BY-4.0 data attribution to FAOSTAT stays — it's a property of the source data.
 
 ## Workflow
 
@@ -62,7 +64,7 @@ Write a working title and the one-sentence research question before pulling data
 Specify in advance (so Methods is fully determined before any figures are drawn):
 
 - **Data source** — FAOSTAT domain(s) by code (GT, QCL, TCL, etc.), accessed date, licence (CC-BY-4.0).
-- **Elements** — FILTER element codes on all `get_data` calls (e.g., `2510` Production quantity).
+- **Elements** — FILTER element codes on all `get_data` calls. Always resolve at runtime via `faostat_search_codes` (invariant 7) — e.g. `faostat_search_codes(domain_code='QCL', dimension_id='element', query='production quantity')` → e.g. 2510. Record both the resolved code and the search query in the Methodology sheet.
 - **Items** — FAOSTAT item codes with canonical names.
 - **Geographic coverage** — FAOSTAT area codes. Rankings use composite China (area 351) unless the user opts into mainland (41); map figures disaggregate (see invariant 5).
 - **Temporal coverage** — comma-separated year list.
@@ -72,7 +74,7 @@ Specify in advance (so Methods is fully determined before any figures are drawn)
 
 ### Step 4 — Pull the data
 
-Apply invariants 1–6. Use `response_format='compact'`, `show_unit=True`, comma year lists, FILTER element codes on `get_data`.
+Apply invariants 1–7. Use `response_format='compact'`, `show_unit=True`, comma year lists, FILTER element codes on `get_data`. Resolve all element and item codes via `faostat_search_codes` before each call (invariant 7).
 
 Log every pull into the xlsx `Methodology` sheet with columns: `call_id`, `domain`, `element`, `items`, `areas`, `years`, `timestamp`, `row_count`, `notes`.
 

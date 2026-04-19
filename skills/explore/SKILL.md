@@ -110,6 +110,10 @@ If the user wants to query, use `faostat_search_codes` to resolve any entity nam
 
 **Important:** Element FILTER codes differ from DISPLAY codes. When calling `faostat_get_data`, use the filter code for the `element` parameter. When calling `faostat_get_rankings`, use the DISPLAY code. If unsure, use `faostat_search_codes` with `dimension_id='element'` to find the correct code.
 
+## Important Rules
+
+**Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
+
 ### Step 7 — Attribution
 
 When presenting any data, always include:

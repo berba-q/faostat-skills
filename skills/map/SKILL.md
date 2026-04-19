@@ -17,6 +17,8 @@ Python packages required in the sandbox: `plotly`, `pandas`. For PNG export only
 
 ## Metric / Domain reference
 
+> Element codes below are verified hints. Resolve at runtime via `faostat_search_codes` before use.
+
 | Metric | Domain | Element (FILTER) | Natural scale | Color scale |
 |---|---|---|---|---|
 | Crop / livestock production quantity | QCL | 2510 | sequential | viridis |
@@ -27,7 +29,7 @@ Python packages required in the sandbox: `plotly`, `pandas`. For PNG export only
 | Import quantity | TCL | 2610 | sequential | PuBu |
 | Export quantity | TCL | 2910 | sequential | PuBu |
 | Agrifood-system emissions | GT | 724313 | sequential | YlOrRd |
-| Emissions per capita | GT | 723112 | sequential | YlOrRd |
+| Emissions per capita | EM | resolve via `faostat_search_codes(domain_code='EM', dimension_id='element', query='per capita')` — verified `7279` | sequential | YlOrRd |
 | Mean surface-temperature change | ET | 7271 | diverging | RdBu_r |
 | Prevalence of undernourishment (%) | FS | 210041 | sequential | YlOrRd |
 | Fertilizer use per ha | RFN | 5157 | sequential | YlGn |
@@ -43,6 +45,7 @@ For any metric not in this table, look up the element FILTER code with `faostat_
 4. **China disaggregation — map carve-out (locked Apr 2026).** Other FAOSTAT skills default to composite `China` (area 351); the map skill does **not**. Maps always disaggregate: keep `China, mainland` (41) on the CHN polygon and let Hong Kong SAR (96), Macao SAR (128) and Taiwan Province of China (214) render on their own polygons where FAOSTAT supplies values. Drop composite 351. Rationale: a choropleth needs one value per ISO3 polygon; using 351 would paint the combined value on CHN and leave HKG / MAC / TWN blank (or double-paint them). Flag the choice in the caption: "China shown as mainland (area 41); HKG / MAC / TWN shown separately where data exists."
 5. **Drop composite and region rows before plotting.** FAOSTAT returns region rows (World, Africa, Americas, Europe, Asia, Oceania, EU27, Low-income food-deficit countries, etc.) alongside country rows. These have no ISO3 code and must be excluded before rendering.
 6. **TCL for national trade aggregates, TM only for partner breakdowns.** This skill maps country totals, so trade maps always pull from TCL. Never sum TM rows to build a country total.
+7. **Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 ## Workflow
 

@@ -30,6 +30,7 @@ All 6 invariants from the FAOSTAT skill suite apply unchanged:
 4. **TCL for national trade aggregates, TM only for partner breakdowns.** Never sum TM rows to reconstruct national totals.
 5. **China composite default (user preference, Apr 2026).** Default to composite `China` (area 351) for country rankings, top-N lists and country-level analysis. Offer `China, mainland` (41) as an opt-in — do not substitute 41 unless the user asks for 41 explicitly. Flag the choice in the Methodology sheet, and include the caveat whenever a China number is quoted: FAOSTAT's own publications default to 41, so a brief using 351 will show a marginally larger "China" value than the FAO data-portal default. (Map figures inside the brief are an exception: they use the disaggregation path — area 41 on the CHN polygon with HKG / MAC / TWN rendered separately — because choropleths cannot sensibly render 351. See the map skill.)
 6. **`faostat_get_rankings` HTTP-500 fallback.** Reconstruct rankings from `faostat_get_data` + client-side sort; document fallback in the Methodology sheet.
+7. **Element and item code resolution.** Never use a hardcoded numeric element or item code as the primary value in a `faostat_get_data` call. Always resolve at runtime: `faostat_search_codes(domain_code='<dom>', dimension_id='element', query='<metric name>')` for elements; `faostat_search_codes(domain_code='<dom>', dimension_id='item', query='<item name>')` for items. Numeric codes shown in reference tables and code examples are verified hints — use them to validate the search result, not as the authoritative source. Domain letter-codes (QCL, TCL, GT, EM, FBS, FS…) are stable and may be used directly.
 
 ## Workflow
 
@@ -64,7 +65,7 @@ For each figure and table, plan a specific `faostat_get_data` call. Log every ca
 - Use comma-separated year lists.
 - Use `response_format='compact'`.
 - Pass `show_unit=True`.
-- For trade aggregates, use **TCL** elements (2610 import quantity, 2910 export quantity, 2612 import value, 2912 export value) — not TM sums.
+- For trade aggregates, use **TCL** elements — not TM sums. Resolve element codes at runtime: e.g. `faostat_search_codes(domain_code='TCL', dimension_id='element', query='import quantity')` → e.g. 2610; similarly for export quantity (~2910), import value (~2612), export value (~2912). Treat any numeric code here as a verified hint to validate against, not a value to pass directly.
 - For region figures, pull the 6 continental area codes (Africa 5100, Americas 5200, Asia 5300, Europe 5400, Oceania 5500, World 5000) directly — don't compute them client-side.
 - For top-N country figures, **don't** rely on `faostat_get_rankings`; pull `faostat_get_data` for the domain and element (no area filter) and sort client-side, so an HTTP-500 from `get_rankings` doesn't block the brief.
 - For China in country rankings and country-level analysis, keep composite `China` (area 351) and drop 41 (mainland), unless the user opted into 41 explicitly. (Map figures inside the brief use the disaggregation path — area 41 + HKG 96 + MAC 128 + TWN 214 — because a choropleth cannot render 351 sensibly.)
