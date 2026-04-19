@@ -1,6 +1,6 @@
 {
   "name": "faostat-skills",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Analysis skills for UN FAOSTAT food and agriculture data. Country profiles, commodity briefings, trade analysis, climate assessments, and data visualizations.",
   "author": "Griffiths Obli-Laryea",
   "license": "MIT",
@@ -28,7 +28,6 @@
     "skills/",
     "commands/",
     ".claude-plugin/",
-    "marketplace.json",
     "README.md",
     "LICENSE"
   ]
