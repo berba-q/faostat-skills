@@ -68,11 +68,41 @@ Everything on one scrollable page, mobile-responsive. Max content width 720 px; 
 
 Inline **Lucide** SVG icons (MIT licensed, ≤ 1 kB each). Fetch from `https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/<name>.svg` at build time and paste the SVG inline. Icon colour = palette accent. Icon size: 32 px next to supporting stats, 48 px next to the main visual title.
 
-Common mappings: emissions → `cloud`, production → `wheat`, trade → `ship`, temperature → `thermometer-sun`, price → `trending-up`, yield → `sprout`, livestock → `beef`, water → `droplet`, land → `mountain`.
+**Two-tier icon selection rule:** choose by *stat type first* (what kind of number is this?), then by *domain* (what is it about?) when the stat type doesn't resolve it.
+
+Stat-type icons (use these before anything domain-specific):
+
+| Stat type | Icon | Notes |
+|---|---|---|
+| Monetary value (USD, EUR, etc.) | `banknote` | Any dollar/price figure. Do NOT use `ship` for export *value*. |
+| Growth rate / percentage change | `trending-up` or `trending-down` | Sign-aware: use `trending-down` for negative. |
+| Share / concentration / % of total | `pie-chart` | "59% shipped by top 5" → `pie-chart`, not `ship`. |
+| Record / all-time peak | `flame` | "2024 was the peak year" → `flame`, not `calendar`. |
+| Ranking / #1 / leader | `trophy` | "Russia is the top exporter" → `trophy`. |
+| Milestone / threshold crossed | `zap` | Sudden change, tipping point. |
+| Count / number of entities | `hash` | "10 countries account for…" |
+| Year / time reference (non-record) | `calendar` | Only when the year itself is the fact, not the record it holds. |
+| Physical quantity shipped/moved | `package` | Export *volume* (tonnes, litres). NOT `ship` — `ship` is the vessel. |
+
+Domain icons (use when the stat type is already resolved by the Lucide icon above, or when you need a second icon):
+
+| Domain | Icon |
+|---|---|
+| Agrifood emissions / GHG | `cloud` |
+| Crop production | `wheat` |
+| Trade route / logistics | `ship` (only for the concept of shipping, e.g. a section header) |
+| Temperature / warming | `thermometer-sun` |
+| Producer price / CPI | `coins` |
+| Yield / efficiency | `sprout` |
+| Livestock | `beef` |
+| Water | `droplet` |
+| Land | `mountain` |
+| Food security / hunger | `utensils` |
+| Forest / land cover | `trees` |
 
 ### Design principles
 
-These principles are extracted from best-in-class data journalism infographics (Visual Capitalist, Column Five, USAID data briefs, OWID explainer cards). Apply them every time:
+These principles are extracted from best-in-class data journalism infographics. Apply them every time:
 
 1. **Narrative arc.** Every infographic tells a complete arc: *scale the problem → show the data → land the implication*. Plan the arc in Step 2 before pulling data. If the data doesn't support the arc, reframe — don't just display numbers.
 2. **Progressive disclosure.** A reader stopping after 5 s gets the hero. One stopping after 15 s gets the supporting stats. One reading fully gets the chart and takeaway. Each layer adds detail without requiring the previous layer to be re-read.
@@ -291,21 +321,232 @@ Accessibility: every SVG gets `role="img"` and a meaningful `aria-label`; decora
 
 After the HTML is saved, ask the user what additional formats they want. The options, with cost notes:
 
-- **PNG** — rendered via headless Chromium (Playwright) at 2× pixel density. Fast (~5 s). Good for Slack / Twitter / pitch decks.
-- **PDF** — rendered via Chromium print-to-PDF, US Letter or A4 portrait. Fast (~5 s). Good for print and email.
+- **Social media card** — a *separate, purpose-built layout* (not a screenshot of the web infographic). See Social media card rules below.
+- **PNG (high-DPI)** — Playwright `page.screenshot()` at `deviceScaleFactor: 3` (retina-quality, 3× pixel density). Good for Slack, social feeds, pitch decks.
+- **PDF (vector, default)** — Playwright `page.pdf(print_background=True)`. Text and CSS shapes stay as vectors — suitable for print and email. No extra install needed.
+- **PDF (print-grade, opt-in)** — Inkscape CLI converts the extracted inline SVG to a true resolution-independent PDF. Every element scales to any size without aliasing. Requires `inkscape` (`brew install inkscape`). Check availability with `shutil.which('inkscape')` and offer this upgrade silently if found.
 - **Companion CSV** — the hero + supporting stats + main-visual data in a flat table. Fast (~1 s). Good for fact-checkers.
 
-If Playwright / Chromium is unavailable in the sandbox, fall back to `weasyprint` (HTML → PDF only; no PNG). Document the fallback in the output description if it fires.
+If Playwright / Chromium is unavailable, fall back to `weasyprint` (HTML → PDF only). Document any fallback in the output description.
 
 Save exports with matching names:
 
 ```
 outputs/
-  <slug>-infographic.html   # always
-  <slug>-infographic.png    # opt-in
-  <slug>-infographic.pdf    # opt-in
-  <slug>-data.csv           # opt-in
+  <slug>-infographic.html      # always
+  <slug>-infographic.pdf       # opt-in (Playwright page.pdf or Inkscape)
+  <slug>-infographic.png       # opt-in (Playwright screenshot, 3× DPI)
+  <slug>-social-portrait.html  # social card source (opt-in)
+  <slug>-social-portrait.png   # screenshot of the above (opt-in)
+  <slug>-social-square.html    # square variant (opt-in)
+  <slug>-social-square.png     # screenshot of the above (opt-in)
+  <slug>-data.csv              # opt-in
 ```
+
+#### Social media card rules
+
+A social media card is a **separate HTML file with a fixed, single-screen viewport**. It is NOT a screenshot of the main infographic HTML. The main infographic is a scrollable web page; a social card is a single, non-scrolling frame that looks complete on its own.
+
+**Supported formats:**
+
+| Format | Dimensions | Best for |
+|---|---|---|
+| Square | 1080 × 1080 px | Instagram feed, Twitter/X |
+| Portrait 4:5 | 1080 × 1350 px | Instagram feed (preferred) |
+| Stories / Reels | 1080 × 1920 px | Instagram Stories, TikTok |
+
+Default to **portrait 4:5** unless the user specifies otherwise.
+
+**Layout inside the card (portrait 4:5 example):**
+
+```
+┌──────────────────────────┐
+│  topic pill / eyebrow    │  ← 8% height, small caps, accent color
+│                          │
+│  HERO NUMBER             │  ← 40% height, full-bleed, ≥ 200 px font
+│  unit spelled out        │
+│                          │
+│  Headline (≤ 8 words)    │  ← 15% height, bold
+│  One-line sub-message    │  ← 10% height, lighter weight
+│                          │
+│  ┌────┐  ┌────┐          │  ← 2 supporting stats max (not 4)
+│  │icon│  │icon│          │
+│  │stat│  │stat│          │  ← 20% height
+│  │cap │  │cap │          │
+│  └────┘  └────┘          │
+│                          │
+│  Source (tiny, muted)    │  ← 7% height
+└──────────────────────────┘
+```
+
+**CSS rules that make it work:**
+
+```css
+html, body {
+  width: 1080px;
+  height: 1350px;   /* adjust per format */
+  overflow: hidden; /* CRITICAL — no scroll; Playwright sees exactly this frame */
+  margin: 0;
+  background: var(--bg);
+}
+main {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 72px 80px;
+  box-sizing: border-box;
+}
+```
+
+**Content rules (stricter than main infographic):**
+- Hero number only — no chart. If the main visual was a line chart, replace it with the start-and-end delta ("from X to Y") as a two-number comparison or drop it entirely.
+- Max 2 supporting stats. Pick the 2 most arresting from the main infographic's 4.
+- No main visual (chart/map) — the hero + 2 stats fill the card. Exception: a single large donut/ring chart that illustrates a share (e.g., "59% of exports") can replace the 2 supporting stats.
+- No takeaway sentence — the sub-message line does that job in ≤ 8 words.
+- Source footer is 11 px, muted — just "Data: FAOSTAT (FAO), CC-BY-4.0."
+
+**Visual quality standard — Figma-grade, not webpage-screenshot-grade:**
+
+Social cards must look like a designer built them from scratch — not like a webpage cropped to a square. Target aesthetic: color-blocked, illustration-rich, typographically bold — the premium data journalism studio standard. Required elements:
+
+1. **Color-blocked sections with organic edges.** The hero area is a distinct, richly colored block (not white). Section transitions use curved `clip-path` edges — no flat horizontal dividers.
+
+2. **Background blob shapes.** One or two large abstract blobs positioned behind the hero or stats area add depth without competing with data.
+
+3. **Large decorative SVG illustration.** One topic-appropriate SVG illustration element (100–220 px) anchors the visual — a wheat stalk silhouette for trade, a cloud/smoke form for emissions, a globe outline for geographic topics, a bowl/plate for food security. This is a *decorative* element, not a Lucide icon. It sits in the background at reduced opacity (15–25%) or in a corner at full opacity as a design accent. It gives the eye visual texture between the numbers.
+
+4. **Rich gradient backgrounds.** Hero backgrounds use a linear or radial gradient, not a flat solid fill.
+
+CSS patterns for organic design:
+
+```css
+/* Hero section: full-bleed with organic curved bottom */
+.hero-section {
+  background: linear-gradient(145deg, var(--hero) 0%, var(--accent) 100%);
+  clip-path: ellipse(115% 78% at 50% 8%);
+  padding: 80px 80px 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background blob — large organic accent shape */
+.blob {
+  position: absolute;
+  width: 380px; height: 380px;
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  background: var(--accent);
+  opacity: 0.18;
+  pointer-events: none;
+}
+.blob-tl { top: -60px; left: -80px; }
+.blob-br { bottom: -80px; right: -60px; transform: rotate(45deg); }
+
+/* Stats area: rounded card on contrasting background */
+.stats-section {
+  background: rgba(255,255,255,0.07);
+  border-radius: 28px;
+  padding: 44px 48px;
+  backdrop-filter: blur(4px);
+}
+
+/* Large decorative SVG illustration anchor */
+.illus {
+  position: absolute;
+  opacity: 0.15;
+  right: 48px; bottom: 48px;
+  width: 180px; height: 180px;
+  fill: var(--text);
+}
+```
+
+SVG illustration guidance: build a simple but bold thematic silhouette in inline SVG. Examples:
+- **Wheat/grain trade:** Three wheat stalks, side by side, with stylised grain heads — 5–8 `<path>` elements.
+- **Emissions/climate:** A billowing cloud/smoke column rising from a horizon line.
+- **Food security/hunger:** A stylised bowl with a spoon, or a globe with fork and knife flanking.
+- **Livestock:** A side-profile cow or chicken silhouette, single solid fill.
+- **Temperature:** A thermometer with a rising mercury column and radiating lines.
+
+These do NOT need to be photorealistic — geometric, flat-style SVG in 2–3 path shapes is the right aesthetic. Fill with palette `--hero` or `--text` at 15–25% opacity for depth without distraction.
+
+**Screenshotting the card:** use Playwright with `viewport` matching card dimensions exactly and `deviceScaleFactor: 3` for retina-quality output (yields a 3240 × 4050 px PNG at 4:5):
+
+```python
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    browser = p.chromium.launch()
+    page = browser.new_page(
+        viewport={"width": 1080, "height": 1350},
+        device_scale_factor=3,   # 3× retina — 3240×4050 output
+    )
+    page.goto(f"file://{path_to_social_html}")
+    page.wait_for_load_state("networkidle")  # wait for Google Fonts
+    page.screenshot(path=png_path, full_page=False)  # full_page=False = viewport only
+    browser.close()
+```
+
+`full_page=False` is critical — it captures exactly the viewport, not the full scrollable document.
+
+#### Export quality pipeline
+
+Three tiers of output, in increasing quality order. Always use the highest tier available.
+
+| Tier | Method | Quality | Requirement |
+|---|---|---|---|
+| 1 — Screen PNG | Playwright `screenshot()` `deviceScaleFactor: 3` | 3× retina, ~3 MP | Playwright (already required) |
+| 2 — Vector PDF | Playwright `page.pdf(print_background=True)` | Vectors for text + CSS shapes | Playwright (already required) |
+| 3 — Print PDF | Inkscape CLI `--export-type=pdf` | True SVG vector, resolution-independent | `brew install inkscape` |
+
+**Tier 2 — Playwright `page.pdf()`** (default for all PDF asks):
+
+```python
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    browser = p.chromium.launch()
+    page = browser.new_page()
+    page.goto(f"file://{path_to_html}")
+    page.wait_for_load_state("networkidle")
+    page.pdf(
+        path=pdf_path,
+        format="A4",              # or "Letter"
+        print_background=True,    # CRITICAL — without this, all fills/gradients are stripped
+        margin={"top": "0", "right": "0", "bottom": "0", "left": "0"},
+    )
+    browser.close()
+```
+
+**Tier 3 — Inkscape CLI** (upgrade silently when `inkscape` is installed; skip if not found):
+
+```python
+import subprocess, shutil
+from bs4 import BeautifulSoup
+
+def export_via_inkscape(html_path, svg_path, pdf_path):
+    # Extract the primary <svg> from the HTML and save standalone
+    soup = BeautifulSoup(open(html_path).read(), "html.parser")
+    svg = soup.find("svg")
+    if not svg:
+        return False  # no SVG to extract; fall back to Tier 2
+    svg_path.write_text(str(svg))
+    subprocess.run([
+        "inkscape", str(svg_path),
+        "--export-type=pdf",
+        f"--export-filename={pdf_path}",
+        "--export-dpi=300",
+    ], check=True)
+    return True
+
+if shutil.which("inkscape"):
+    ok = export_via_inkscape(html_path, svg_path, pdf_path)
+if not shutil.which("inkscape") or not ok:
+    # Fall back to Tier 2
+    ...
+```
+
+**Quality ceiling without external design tools:**
+
+With Tier 2/3, the output reaches 85–90% of premium data journalism studio quality. The remaining gap is hand-crafted illustration work: character figures, complex flow diagrams, and multi-element scene compositions. Those require a human designer or an interactive vector tool (Figma, Illustrator). Figma, Canva, and Adobe Express are not currently suitable for agent-driven layout generation — they require interactive editing sessions and have no practical programmatic "generate from data" API for arbitrary layouts.
 
 ### Step 9 — Save and describe
 
