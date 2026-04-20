@@ -1,7 +1,7 @@
 {
   "name": "faostat-skills",
   "description": "Analysis skills for UN FAOSTAT food and agriculture data. Country profiles, commodity briefings, trade analysis, climate assessments, and data visualizations. Works with any AI assistant that supports the SKILL.md format.",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "author": {
     "name": "Griffiths Obli-Laryea"
   },
