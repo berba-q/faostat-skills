@@ -25,8 +25,10 @@ Cross-skill invariants (all six — violations are skill bugs):
 
 Infographic-specific invariants:
 
-8. **One hero stat.** There is exactly one hero number on the page. If you're torn between two, pick the more surprising one and push the other into the supporting-stats row.
-9. **One main visual.** Exactly one chart, map, or diagram. Rankings and compositions that would otherwise become a second chart render as a plain bulleted list or a small numeric table with no bar-width indicators. See Step 3 for the decision tree.
+8. **One hero stat.** There is exactly one hero number on the page — the most surprising single figure. If you're torn between two, push the second into the supporting-stats row.
+9. **One main visual per layout mode.** Two modes:
+   - **Poster mode (default):** one chart/map/flow diagram total. A second visual becomes a plain bulleted list or small numeric table — no bar-width indicators, no sparklines.
+   - **Narrative mode (opt-in):** the topic warrants multiple sections — e.g., a trade infographic with (1) global volume hero → (2) top exporters bar chart → (3) trade route flow map. Each section has its own sub-headline and one visual element. Activate when the user's topic is inherently multi-angle OR when they explicitly ask. In narrative mode the hero still appears once at the top; each section's visual is smaller than the hero section. Maximum 3 sections before the takeaway.
 10. **Jargon only in the source footer.** `AR5`, `AR5 GWP-100`, `CAGR`, `n.e.c.`, `FILTER code`, `DISPLAY code`, `LULUCF`, bare `CO2eq`, `kt`/`Mt`/`Gt` on first reference, and numeric FAOSTAT element/item codes stay in the source footer. Not in visual titles, subtitles, chart labels, captions, or headlines.
 11. **Ten-second test.** Read the page aloud in 10 seconds — can a non-expert recite the main point? If not, shrink the headline or enlarge the hero.
 12. **No FAO branding.** Retain CC-BY-4.0 data attribution ("Data: FAOSTAT (FAO), CC-BY-4.0"), but do not reproduce the FAO logo, "Food and Agriculture Organization of the United Nations" masthead, ISSN, "FAO Statistics Division" stamp, or "Required citation: FAO. …" line. The infographic is the analyst's, not FAO's.
@@ -58,11 +60,11 @@ One font family loaded via Google Fonts (`https://fonts.googleapis.com/css2?fami
 1. **Hero stat** — one number, as big as it dares (≥ 30 % of viewport height on desktop). Unit spelled out ("16.5 billion tonnes of CO₂-equivalent", not "16.5 Gt CO₂eq").
 2. **Headline** — one sentence, ≤ 10 words.
 3. **Supporting stats row** — 2–4 numbers with a Lucide icon each and a one-line caption. No more than 4.
-4. **Main visual** — exactly one. A line chart (temporal), a bar chart (compositional), or a choropleth map (geographic). Stripped of gridlines; labels on the data, not on axes where possible.
+4. **Main visual** — exactly one chart, map, or flow diagram per section. Default layout has one section. Narrative mode (multi-section) adds intermediate sections — see invariant 9.
 5. **Takeaway** — one italic sentence, plain-English "so-what" framing.
 6. **Source footer** — "Data: FAOSTAT (FAO), accessed [Month YYYY]. Licence: CC-BY-4.0. Domains: [codes]. China: [composite 351 / mainland 41 per user opt-in / disaggregated for map]."
 
-Everything on one scrollable page, mobile-responsive. Max content width 720 px; hero and main visual full-bleed to 1200 px.
+Everything on one scrollable HTML document, mobile-responsive. The page can be as tall as the story requires — "one page" means no pagination, not one viewport. Max content width 720 px; hero and main visual full-bleed to 1200 px.
 
 ### Iconography
 
@@ -124,6 +126,43 @@ Scroll-triggered, zero external dependencies — `IntersectionObserver` + CSS tr
 **Line chart draw** — set `stroke-dasharray` equal to the path's `getTotalLength()` at paint time; start `stroke-dashoffset` at that same value and transition to `0` over `1.4s cubic-bezier(0.25, 1, 0.5, 1)`. Triggered by an `IntersectionObserver` adding `.visible`.
 
 **Hero glow pulse** (Ember palette only) — a repeating `box-shadow` keyframe on the hero stat container. Fades an amber glow in and out over 2 s. Omit on Meadow and Ink — those topics don't warrant urgency drama.
+
+**Trade route arcs + moving icons** — for flow maps. Three layered animations:
+1. Arc draw: `stroke-dashoffset` transitions from full path length to 0, staggered 200 ms per route, 1.2 s each.
+2. Icon travel: CSS `offset-path` matching the arc's Bézier definition; `offset-rotate: auto` keeps the icon facing the direction of travel.
+3. Pulse dot at destination: a small circle at the importer centroid scales from 0 → 1.4 → 1 (`transform: scale`) when the icon arrives, timed via `animation-delay`.
+
+```css
+/* Arc draw-on */
+.trade-arc {
+  stroke-dasharray: var(--arc-len);   /* set via JS: el.style.setProperty('--arc-len', path.getTotalLength()) */
+  stroke-dashoffset: var(--arc-len);
+  transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);
+}
+.trade-arc.visible { stroke-dashoffset: 0; }
+
+/* Icon travel — offset-path set inline per route */
+.trade-icon {
+  offset-rotate: auto;
+  animation: _travel var(--dur, 5s) linear var(--delay, 0s) infinite;
+}
+@keyframes _travel {
+  0%   { offset-distance: 0%;   opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+/* Destination pulse */
+.dest-dot {
+  animation: _pulse 0.4s ease-out var(--arrive-delay, 4.8s) both;
+}
+@keyframes _pulse {
+  0%   { transform: scale(0); opacity: 1; }
+  70%  { transform: scale(1.4); }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+```
 
 Standard JS boilerplate (inline `<script>` at end of `<body>`):
 
@@ -219,13 +258,16 @@ This becomes the hero + headline. Draft both before pulling data — if the narr
 Pick the main visual type:
 - **Line** for a temporal story ("emissions 2001–2023")
 - **Bar** for a ranking ("top 10 emitters in 2023") or a composition ("three pillars of agrifood emissions")
-- **Map (choropleth)** for a geographic story ("emissions per capita by country"). If map → compose with the `faostat-map` skill, which returns an SVG choropleth in one of the three palettes.
+- **Choropleth map** for a geographic distribution story ("emissions per capita by country"). Compose with the `faostat-map` skill → returns an SVG choropleth in the chosen palette.
+- **Flow map** for bilateral trade routes, migration, or supply chains. See Step 5 for rendering. Use when the story is about *movement between places*, not quantity at a place. Data source: FAOSTAT TM domain (bilateral trade) for top-N flows of a commodity.
 
-**Exactly one main visual.** Not two, not a pair, not a chart-plus-ranks section. If the user asked for both a temporal story and a top-producers ranking, the line chart is the main visual and the ranking renders as **a plain bulleted list or a small numeric table** — text first, no second chart. No sparklines, no small multiples, no dual-axis, no "bar magnitude" indicators that turn a table into a chart. If the table's row lengths are visually dominant (bars filling the row width), it counts as a second chart — strip the bars.
+**In poster mode: exactly one main visual.** Not two, not a pair. If the user asks for both a time series and a top-producers ranking, the line chart is the main visual and the ranking is a plain bulleted list — no bar indicators. No sparklines, no small multiples, no dual-axis.
 
-If you feel the urge to add a second chart, pick one:
+**In narrative mode: one visual per section, max 3 sections.** Each section builds on the previous. For a trade topic, the natural narrative arc is: hero volume → top exporters bar → trade route flow map. Each visual is smaller than the hero area. The page scrolls through the story.
+
+If you feel the urge to add a second chart in poster mode:
 - Promote it to the main visual and demote the current one to a text stat.
-- Split into two infographics.
+- Switch to narrative mode (if the topic warrants it).
 - Drop it.
 
 ### Step 4 — Pull the data
@@ -246,9 +288,57 @@ Pull only what you need for the 1 hero + 2–4 supporting stats + main visual. D
 
 ### Step 5 — Compose the main visual
 
-Inline SVG. Palette applied. Gridlines stripped. For line charts, label the endpoints directly on the line. For bar charts, label the bars directly and drop the numeric axis. For maps, call the map skill with `output_format='svg'`, `palette=<chosen>`, `disaggregate_china=true`.
+Inline SVG. Palette applied. Gridlines stripped. For line charts, label the endpoints directly on the line. For bar charts, label the bars directly and drop the numeric axis. For choropleth maps, call the map skill with `output_format='svg'`, `palette=<chosen>`, `disaggregate_china=true`.
 
 Size: main visual 720 px wide on desktop, 100 % width on mobile, aspect ratio ~16:9 for charts and ~2:1 for maps.
+
+#### Flow map (trade routes, migration, supply chain)
+
+Build as inline SVG with animated arcs. Use the top-N bilateral flows from FAOSTAT TM (typically top 10 by value or quantity).
+
+**Flat world map variant:**
+1. Use a simplified world outline SVG (Natural Earth 110m resolution — very small file, ≈ 30 kB). Render as light grey fills (`#e0e0e0`) on a dark or pale background.
+2. Compute exporter and importer centroid coordinates for each country (use a precomputed lookup — standard lat/lon centroids).
+3. Draw each trade arc as a quadratic Bézier `<path>` between centroids with the control point lifted above the midpoint (gives the arc its curve). Stroke weight proportional to flow volume.
+4. Animate the arc with `stroke-dashoffset` (draw-on effect, 1–2 s per arc, staggered).
+5. Add a moving transport icon (plane for air freight, ship for sea, truck for land) using CSS `offset-path`:
+
+```css
+.trade-icon {
+  offset-path: path("M x1,y1 Q cx,cy x2,y2"); /* same Bézier as the arc */
+  offset-rotate: auto;          /* icon faces direction of travel automatically */
+  animation: move-along 4s linear infinite;
+}
+@keyframes move-along {
+  from { offset-distance: 0%; }
+  to   { offset-distance: 100%; }
+}
+```
+
+The Lucide `plane` icon works well; rotate 45° if the route is primarily horizontal. Use `ship` for sea routes. Animate each icon with a different `animation-delay` so they don't all depart simultaneously.
+
+**Globe variant (for dramatic single-route or top-5 flows):**
+1. Draw a filled `<ellipse>` as the globe body (palette background or deep blue).
+2. Overlay a simplified hemisphere outline (just the visible half of Natural Earth, clipped to the ellipse).
+3. Define a `<clipPath>` using the same ellipse so arcs outside the visible hemisphere are hidden.
+4. Bézier arcs stay above the globe surface — raise the control point to `cy = midpoint_y - 120` for a convincing great-circle arc appearance.
+5. Rotate the globe centre toward the most important trade corridor for the best visual frame.
+
+```svg
+<defs>
+  <clipPath id="globe-clip">
+    <ellipse cx="360" cy="300" rx="280" ry="280"/>
+  </clipPath>
+</defs>
+<ellipse cx="360" cy="300" rx="280" ry="280" fill="#1a2a3a"/>
+<g clip-path="url(#globe-clip)">
+  <!-- simplified world outline paths here -->
+  <!-- trade arc paths with stroke-dashoffset animation -->
+</g>
+<!-- moving icons outside clip so they're always visible -->
+```
+
+**Data note for flow maps:** pull bilateral trade from FAOSTAT TM domain — this gives reporter × partner pairs. Limit to top 10 flows by export quantity or value. Do NOT reconstruct from TCL (TCL is national totals, not bilateral).
 
 ### Step 6 — Write captions and takeaway
 
@@ -262,7 +352,7 @@ Plain-language rules:
 
 Single self-contained file. Inline CSS and inline SVG. One external resource allowed: the Google Fonts stylesheet. Include the animation boilerplate from the **Animations** section of the Visual system.
 
-HTML structure template (with animation hooks):
+Use the complete boilerplate below — copy it, fill in the data, and do not replace the CSS with placeholder comments. Placeholder comments are the primary cause of unstyled output.
 
 ```html
 <!DOCTYPE html>
@@ -273,49 +363,211 @@ HTML structure template (with animation hooks):
   <title>[Headline]</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500&display=swap">
   <style>
-    /* 1. Palette CSS variables */
-    /* 2. Base + typography */
-    /* 3. Layout: hero, supporting, visual, takeaway, footer */
-    /* 4. Responsive breakpoints (480 / 768 / 1024 px) */
-    /* 5. Animation CSS block from Visual system Animations section */
+    /* ── Palette tokens — set on <body> via class ── */
+    :root {
+      --bg:#0B0B0F; --hero:#F6A33F; --accent:#FF5C39;
+      --text:#F3F3F1; --secondary:#6D6D74;
+      --card-bg:rgba(255,255,255,0.06); --border:rgba(255,255,255,0.08);
+    }
+    body.palette-meadow {
+      --bg:#F6F5EF; --hero:#2E7D4F; --accent:#E8A03D;
+      --text:#1F2420; --secondary:#6B6E67;
+      --card-bg:rgba(0,0,0,0.04); --border:rgba(0,0,0,0.08);
+    }
+    body.palette-ink {
+      --bg:#FAFAFA; --hero:#1B1F3A; --accent:#E23E57;
+      --text:#1B1F3A; --secondary:#7A7D87;
+      --card-bg:rgba(0,0,0,0.04); --border:rgba(0,0,0,0.08);
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      background:var(--bg); color:var(--text);
+      font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif;
+      line-height:1.5; -webkit-font-smoothing:antialiased;
+    }
+    main { max-width:1200px; margin:0 auto; }
+
+    /* ── Topic pill ── */
+    .topic-pill {
+      display:inline-block; font-size:11px; font-weight:700;
+      letter-spacing:.12em; text-transform:uppercase;
+      color:var(--accent); border:1px solid var(--accent);
+      border-radius:999px; padding:4px 14px; margin-bottom:32px;
+    }
+
+    /* ── Hero ── */
+    .hero { padding:80px 40px 64px; max-width:900px; }
+    .hero-stat {
+      font-family:'Space Grotesk',sans-serif; font-weight:700;
+      font-size:clamp(72px,14vw,180px); color:var(--hero);
+      line-height:.9; letter-spacing:-.02em; margin-bottom:12px;
+    }
+    .hero-stat .unit {
+      font-size:clamp(18px,3vw,32px); font-weight:400;
+      color:var(--secondary); display:block; margin-top:8px; letter-spacing:0;
+    }
+    h1.headline {
+      font-family:'Space Grotesk',sans-serif; font-weight:700;
+      font-size:clamp(28px,4.5vw,52px); line-height:1.1;
+      color:var(--text); margin-top:24px; max-width:720px;
+    }
+
+    /* ── Supporting stats ── */
+    .supporting {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:20px; padding:0 40px 64px; max-width:820px;
+    }
+    .stat {
+      background:var(--card-bg); border:1px solid var(--border);
+      border-radius:16px; padding:28px 24px;
+    }
+    .stat svg { color:var(--accent); margin-bottom:12px; display:block; }
+    .stat .n {
+      font-family:'Space Grotesk',sans-serif; font-weight:700;
+      font-size:36px; color:var(--hero); line-height:1;
+    }
+    .stat .cap { font-size:13px; color:var(--secondary); margin-top:6px; line-height:1.4; }
+
+    /* ── Main visual ── */
+    .visual { padding:0 0 64px; }
+    .visual-label {
+      font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+      color:var(--accent); padding:0 40px 8px;
+    }
+    .visual-title {
+      font-family:'Space Grotesk',sans-serif; font-weight:700;
+      font-size:22px; padding:0 40px 8px; color:var(--text);
+    }
+    .visual-sub { font-size:14px; color:var(--secondary); padding:0 40px 32px; }
+    .visual svg { width:100%; height:auto; display:block; }
+
+    /* ── Takeaway ── */
+    .takeaway {
+      font-size:18px; color:var(--secondary); font-style:italic;
+      line-height:1.6; border-top:1px solid var(--border);
+      padding:32px 40px 48px; max-width:760px;
+    }
+
+    /* ── Source footer ── */
+    footer.source {
+      font-size:11px; color:var(--secondary); line-height:1.6;
+      border-top:1px solid var(--border); padding:24px 40px 64px; max-width:900px;
+    }
+
+    /* ── Responsive ── */
+    @media(max-width:768px){
+      .hero{padding:48px 24px 40px}
+      .supporting{padding:0 24px 40px;grid-template-columns:1fr 1fr}
+      .visual-label,.visual-title,.visual-sub{padding-left:24px;padding-right:24px}
+      .takeaway{padding:24px 24px 40px}
+      footer.source{padding:24px}
+    }
+    @media(max-width:480px){
+      .supporting{grid-template-columns:1fr}
+    }
+
+    /* ── Animations (prefers-reduced-motion guarded — see JS) ── */
+    .stat{opacity:0;transform:translateY(16px);transition:opacity .5s ease,transform .5s ease}
+    .stat.visible{opacity:1;transform:none}
+    .stat:nth-child(2){transition-delay:.1s}
+    .stat:nth-child(3){transition-delay:.2s}
+    .stat:nth-child(4){transition-delay:.3s}
+    [data-draw]{transition:stroke-dashoffset 1.4s cubic-bezier(.25,1,.5,1)}
+    @media(prefers-reduced-motion:no-preference){
+      body.palette-ember .hero-stat{animation:_glow 2s ease-in-out infinite}
+    }
+    @keyframes _glow{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 52px rgba(246,163,63,.30)}}
   </style>
 </head>
-<body class="palette-[ember|meadow|ink]">
+<body class="palette-ember"> <!-- change to palette-meadow or palette-ink as needed -->
   <main>
     <section class="hero">
-      <!-- data-value holds the numeric portion only; unit and prefix in sibling spans -->
+      <div class="topic-pill">[TOPIC · YEAR]</div>
+      <!-- data-value = numeric portion only; .unit = spelled-out unit string -->
       <div class="hero-stat" data-value="16.5">
-        <span class="counter-value">16.5</span><span class="unit"> bn t CO₂-eq</span>
+        <span class="counter-value">16.5</span>
+        <span class="unit">billion tonnes of CO₂-equivalent</span>
       </div>
-      <h1 class="headline">[Headline ≤ 10 words]</h1>
+      <h1 class="headline">[Headline — plain English, ≤ 10 words]</h1>
     </section>
+
     <section class="supporting">
-      <!-- Each .stat starts invisible; IntersectionObserver adds .visible -->
+      <!-- Repeat for each of 2–4 stats. Icons: inline Lucide SVG, 32×32 -->
       <div class="stat">
-        <svg aria-hidden="true"><!-- Lucide icon inline --></svg>
-        <div class="n">+21%</div>
-        <div class="cap">since 2001</div>
+        <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- paste Lucide icon path here -->
+        </svg>
+        <div class="n">+3.3%</div>
+        <div class="cap">rise over the decade</div>
       </div>
-      <!-- 2–3 more .stat cards -->
     </section>
+
     <section class="visual">
-      <!-- Line chart: add data-draw attribute to the <path> element -->
-      <svg role="img" aria-label="[descriptive alt text]">
-        <path data-draw class="chart-line" d="M..." stroke="var(--hero)" fill="none" stroke-width="3"/>
+      <div class="visual-label">[SECTION LABEL]</div>
+      <div class="visual-title">[Chart / map title]</div>
+      <div class="visual-sub">[One-line description of what the visual shows]</div>
+      <!-- Inline SVG chart or map. For line charts add data-draw to the <path>.
+           For bar charts start each <rect> at width="0" and transition to final width.
+           For choropleth maps paste SVG returned by faostat-map skill. -->
+      <svg role="img" aria-label="[alt text describing the data]" viewBox="0 0 720 360">
+        <!-- chart content -->
       </svg>
-      <!-- Bar chart: start each <rect> at width="0"; animate width via JS or CSS -->
     </section>
-    <p class="takeaway"><em>[One-line so-what, italic]</em></p>
-    <footer class="source">Data: FAOSTAT (FAO), accessed [Month YYYY]. Licence: CC-BY-4.0. Domains: [codes]. [China footnote].</footer>
+
+    <p class="takeaway"><em>[One italic sentence: what this means for the reader]</em></p>
+
+    <footer class="source">
+      Data: FAOSTAT (FAO), accessed [Month YYYY]. Licence: CC-BY-4.0.
+      Domains: [codes]. Years: [range]. [China handling note]. [Any methodology note].
+    </footer>
   </main>
-  <script>/* Animation boilerplate from Visual system Animations section */</script>
+
+  <script>
+    // Animation driver — guarded by prefers-reduced-motion
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('.stat').forEach(el => el.classList.add('visible'));
+        return;
+      }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('visible');
+          if (e.target.classList.contains('hero-stat')) _counter(e.target);
+          if (e.target.dataset.draw !== undefined) _drawPath(e.target);
+          io.unobserve(e.target);
+        });
+      }, { threshold: 0.15 });
+      document.querySelectorAll('.hero-stat, .stat, [data-draw]').forEach(el => io.observe(el));
+
+      function _counter(el) {
+        const end = parseFloat(el.dataset.value);
+        const dec = (String(end).split('.')[1] ?? '').length;
+        const t0 = performance.now();
+        (function tick(now) {
+          const p = Math.min((now - t0) / 1200, 1);
+          el.querySelector('.counter-value').textContent =
+            (end * (1 - Math.pow(1 - p, 3))).toFixed(dec);
+          if (p < 1) requestAnimationFrame(tick);
+        })(t0);
+      }
+
+      function _drawPath(el) {
+        const len = el.getTotalLength ? el.getTotalLength() : 0;
+        el.style.strokeDasharray = len;
+        el.style.strokeDashoffset = len;
+        requestAnimationFrame(() => { el.style.strokeDashoffset = 0; });
+      }
+    });
+  </script>
 </body>
 </html>
 ```
 
-Responsive breakpoints at 480 / 768 / 1024 px. On mobile the hero shrinks to 72–96 px, supporting stats stack vertically, and the main visual goes full-width.
-
-Accessibility: every SVG gets `role="img"` and a meaningful `aria-label`; decorative icons use `aria-hidden="true"`. Colour contrast ≥ 4.5:1 for body text, ≥ 3:1 for large text. `prefers-reduced-motion` is handled by the animation boilerplate's early-return guard.
+Accessibility: every SVG gets `role="img"` and `aria-label`; decorative icons use `aria-hidden="true"`. Contrast ≥ 4.5:1 for body text, ≥ 3:1 for large text.
 
 ### Step 8 — Offer exports
 
