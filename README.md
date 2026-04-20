@@ -11,13 +11,17 @@ AI-powered analysis skills for the [UN FAOSTAT](https://www.fao.org/faostat/en/#
 
 ### Quick Start
 
-**Claude Code**
+**Claude Code (CLI)**
 ```bash
-# 1. Add this repo as a marketplace (one-time)
+# 1. Add this repo as a marketplace from CC CLI (one-time)
+claude
 /plugin marketplace add berba-q/faostat-skills
 
 # 2. Install
-claude plugin install faostat-skills@faostat
+/plugin install faostat-skills@faostat
+
+# 3. Activate
+/reload-plugins
 ```
 
 **OpenAI Codex**
@@ -61,10 +65,7 @@ Claude Code uses a marketplace model. Add this repo as a marketplace source once
 claude plugin install faostat-skills@faostat
 ```
 
-To update to a new version later:
-```bash
-claude plugin update faostat-skills@faostat
-```
+Updates are automatic — Claude Code checks for new versions at startup and updates in the background. Run `/reload-plugins` to activate the latest version in your current session.
 
 ### OpenAI Codex
 
@@ -168,11 +169,15 @@ Key domains used by these skills:
 ```
 FAOSTAT Skills (this repo)          FAOSTAT MCP Server (separate)
 ┌────────────────────────┐          ┌────────────────────────┐
-│ 9 platform-agnostic    │  uses    │ 21 MCP tools           │
+│ 14 platform-agnostic   │  uses    │ 21 MCP tools           │
 │ SKILL.md workflows     │────────→ │ Published on PyPI      │
-│                        │          │ v1.2.2 · stable        │
+│                        │          │ faostat-mcp · stable   │
 └────────────────────────┘          └────────────────────────┘
 ```
+
+**Two distribution channels — keep both in sync:**
+- **Claude Code**: served from GitHub (`berba-q/faostat-skills`) via the marketplace. Push to GitHub → users get the update automatically at next startup.
+- **npm / Codex**: served from npm (`faostat-skills`). Run `npm publish` → Codex users update with `npm install -g faostat-skills@latest`.
 
 Skills orchestrate the MCP server's tools into multi-step analysis workflows. They encode FAOSTAT domain expertise so users can easily interact with the FAOSTAT data.
 
@@ -180,18 +185,22 @@ Skills orchestrate the MCP server's tools into multi-step analysis workflows. Th
 
 ```
 faostat-skills/
-├── skills/                     ← Core: platform-agnostic SKILL.md files
-│   ├── country-profile/
+├── skills/                     ← Core: 14 platform-agnostic SKILL.md files
+│   ├── country-profile/        ← Tier 1: analysis
 │   ├── compare/
 │   ├── commodity/
 │   ├── trade/
 │   ├── trends/
 │   ├── climate/
-│   ├── viz/
+│   ├── explore/
+│   ├── viz/                    ← Tier 2: outputs
+│   ├── map/
+│   ├── infographic/
 │   ├── story/
-│   └── explore/
+│   ├── analytical-brief/
+│   ├── scientific-paper/
+│   └── export-dataset/         ← Tier 3: utilities
 ├── .claude-plugin/             ← Claude Code packaging
-├── .agents/skills/             ← OpenAI Codex packaging (symlink)
 ├── commands/                   ← Claude Code slash commands
 ├── README.md
 └── LICENSE
