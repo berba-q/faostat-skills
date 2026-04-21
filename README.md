@@ -61,8 +61,8 @@ Claude Code uses a marketplace model. Add this repo as a marketplace source once
 # Step 1 — add marketplace (one-time setup)
 /plugin marketplace add berba-q/faostat-skills
 
-# Step 2 — install the plugin
-claude plugin install faostat-skills@faostat
+# Step 2 — install the plugin (inside Claude Code)
+/plugin install faostat-skills@faostat
 ```
 
 Updates are automatic — Claude Code checks for new versions at startup and updates in the background. Run `/reload-plugins` to activate the latest version in your current session.
@@ -175,9 +175,14 @@ FAOSTAT Skills (this repo)          FAOSTAT MCP Server (separate)
 └────────────────────────┘          └────────────────────────┘
 ```
 
-**Two distribution channels — keep both in sync:**
-- **Claude Code**: served from GitHub (`berba-q/faostat-skills`) via the marketplace. Push to GitHub → users get the update automatically at next startup.
-- **npm / Codex**: served from npm (`faostat-skills`). Run `npm publish` → Codex users update with `npm install -g faostat-skills@latest`.
+**Release flow:**
+```bash
+npm version patch        # bumps all 4 version fields atomically (see below)
+git push && git push --tags
+npm publish
+```
+
+Version bumping is handled by `scripts/sync-version.mjs`, wired into npm's `version` lifecycle hook in `package.json`. When you run `npm version patch`, npm updates `package.json`, the hook propagates the same version to `.claude-plugin/plugin.json`, `marketplace.json`, and `.claude-plugin/marketplace.json`, then stages all four for the version commit. This prevents the drift bug where `.claude-plugin/plugin.json` silently stayed at `0.1.0` across four published npm releases — Claude Code reads its displayed plugin version from that file, not from `package.json`.
 
 Skills orchestrate the MCP server's tools into multi-step analysis workflows. They encode FAOSTAT domain expertise so users can easily interact with the FAOSTAT data.
 

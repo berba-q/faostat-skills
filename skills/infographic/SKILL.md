@@ -479,6 +479,31 @@ Use the complete boilerplate below — copy it, fill in the data, and do not rep
       body.palette-ember .hero-stat{animation:_glow 2s ease-in-out infinite}
     }
     @keyframes _glow{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 52px rgba(246,163,63,.30)}}
+
+    /* Let SVG series labels positioned past the right edge render instead of clipping */
+    section.visual svg{overflow:visible}
+
+    /* Print / PDF export: force end-state of every animated element.
+       Playwright's page.pdf() does not scroll, so IntersectionObserver never fires
+       and scroll-triggered animations stay in their pre-animation hidden state.
+       This block makes the printed output identical to the "animation complete" screen state. */
+    @media print{
+      *,*::before,*::after{
+        animation:none !important;
+        transition:none !important;
+      }
+      .stat,.hero-stat,[data-draw],.trade-arc,.trade-icon{
+        opacity:1 !important;
+        transform:none !important;
+        stroke-dashoffset:0 !important;
+        fill-opacity:1 !important;
+      }
+      /* Keep hero, stat row, and chart each on one page */
+      .hero,.supporting,.visual,.takeaway,footer.source{
+        page-break-inside:avoid;
+        break-inside:avoid;
+      }
+    }
   </style>
 </head>
 <body class="palette-ember"> <!-- change to palette-meadow or palette-ink as needed -->
@@ -511,8 +536,16 @@ Use the complete boilerplate below — copy it, fill in the data, and do not rep
       <div class="visual-sub">[One-line description of what the visual shows]</div>
       <!-- Inline SVG chart or map. For line charts add data-draw to the <path>.
            For bar charts start each <rect> at width="0" and transition to final width.
-           For choropleth maps paste SVG returned by faostat-map skill. -->
-      <svg role="img" aria-label="[alt text describing the data]" viewBox="0 0 720 360">
+           For choropleth maps paste SVG returned by faostat-map skill.
+
+           Right-side series labels (e.g. "Farm gate", "Land-use change") must fit
+           within the viewBox horizontally — or rely on `section.visual svg { overflow: visible }`
+           (already in the boilerplate) to escape viewBox bounds. Rule of thumb:
+           reserve the rightmost 25% of viewBox width for label column when a chart
+           has inline right-side labels, OR lengthen viewBox width (e.g. 960×360
+           instead of 720×360) so labels have room. Truncated labels like
+           "Land-use ch" instead of "Land-use change" = viewBox too narrow. -->
+      <svg role="img" aria-label="[alt text describing the data]" viewBox="0 0 960 360">
         <!-- chart content -->
       </svg>
     </section>
@@ -529,7 +562,11 @@ Use the complete boilerplate below — copy it, fill in the data, and do not rep
     // Animation driver — guarded by prefers-reduced-motion
     document.addEventListener('DOMContentLoaded', () => {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        document.querySelectorAll('.stat').forEach(el => el.classList.add('visible'));
+        // Force the "animation complete" end-state on every animated element.
+        // This path also runs under Playwright's emulate_media(reduced_motion="reduce")
+        // during PDF/PNG export, which is what keeps charts visible in exports.
+        document.querySelectorAll('.stat, .hero-stat, [data-draw], .trade-arc')
+          .forEach(el => el.classList.add('visible'));
         return;
       }
       const io = new IntersectionObserver((entries) => {
@@ -734,6 +771,19 @@ with sync_playwright() as p:
     )
     page.goto(f"file://{path_to_social_html}")
     page.wait_for_load_state("networkidle")  # wait for Google Fonts
+
+    # Force animation end-state before capture. For `full_page=False` social
+    # cards this is mostly defensive (the card fits in viewport so the observer
+    # usually fires), but it's required for `full_page=True` captures of tall
+    # infographics where elements below the fold never enter the viewport.
+    page.emulate_media(reduced_motion="reduce")
+    page.evaluate(
+        """() => document
+          .querySelectorAll('.stat, .hero-stat, [data-draw], .trade-arc')
+          .forEach(el => el.classList.add('visible'))"""
+    )
+    page.wait_for_timeout(100)
+
     page.screenshot(path=png_path, full_page=False)  # full_page=False = viewport only
     browser.close()
 ```
@@ -759,6 +809,24 @@ with sync_playwright() as p:
     page = browser.new_page()
     page.goto(f"file://{path_to_html}")
     page.wait_for_load_state("networkidle")
+
+    # CRITICAL for animated infographics: page.pdf() does not scroll, so
+    # IntersectionObserver-driven animations never fire and animated elements
+    # stay in their pre-animation hidden state (invisible chart fills, faded
+    # stat cards, undrawn line-chart paths).
+    # Emulating print media + reduced-motion triggers the JS early-return that
+    # force-adds .visible to every animated element, and activates the
+    # @media print CSS block that kills transitions and forces end-state.
+    page.emulate_media(media="print", reduced_motion="reduce")
+    # Defensive fallback in case the HTML was generated without the reduced-
+    # motion early-return (older template or hand-written HTML).
+    page.evaluate(
+        """() => document
+          .querySelectorAll('.stat, .hero-stat, [data-draw], .trade-arc')
+          .forEach(el => el.classList.add('visible'))"""
+    )
+    page.wait_for_timeout(100)  # let the DOM repaint after class changes
+
     page.pdf(
         path=pdf_path,
         format="A4",              # or "Letter"
